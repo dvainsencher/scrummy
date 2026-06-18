@@ -9,6 +9,7 @@ import { setActive } from "./commands/setActive.js";
 import { setPosition } from "./commands/setPosition.js";
 import { setSprintStatus } from "./commands/setSprintStatus.js";
 import { setStatus } from "./commands/setStatus.js";
+import { show } from "./commands/show.js";
 import { spec } from "./commands/spec.js";
 import { parseArgs, requireIntPositional, requirePositional } from "./parse.js";
 
@@ -105,5 +106,14 @@ export const commands: Record<string, CommandHandler> = {
     const parsed = parseArgs(args);
     const id = requireIntPositional(parsed, 0, "id");
     return spec(cwd, id);
+  },
+
+  show: (cwd, args) => {
+    const parsed = parseArgs(args);
+    return show(cwd, {
+      sprint: parsed.flags.sprint as string | undefined,
+      done: parsed.flags.done === true,
+      json: parsed.flags.json === true,
+    });
   },
 };

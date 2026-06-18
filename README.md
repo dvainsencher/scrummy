@@ -123,7 +123,9 @@ All of the above are implemented (`SPRINTS.md`'s `foundation` sprint).
 
 ### Reader (the linchpin — rich enough that the agent never opens raw files)
 
-> **Not yet implemented** — next up in `SPRINTS.md`'s `the-reader` sprint.
+Implemented (`SPRINTS.md`'s `the-reader` sprint). By default, done items and done
+sprints are hidden — `--done` reveals them. `--sprint <name>` shows only that
+sprint's items and omits the backlog section.
 
 ```
 pauta show [--sprint <name>] [--done]      # the human-scannable whole plan
@@ -202,5 +204,5 @@ pauta init
 
 ## Status
 
-The `foundation` sprint (the whole mechanical layer — init, schema, CLI commands,
-backlog filter) is done; see `SPRINTS.md` for the build plan and what's next.
+`foundation` and `the-reader` sprints are done — the whole mechanical layer plus
+`show`/`show --json`. See `SPRINTS.md` for the build plan and what's next.

@@ -59,4 +59,18 @@ describe("command registry", () => {
     expect(typeof result).toBe("string");
     expect(fs.existsSync(result as string)).toBe(true);
   });
+
+  it("show renders the backlog by default", () => {
+    commands.init(cwd, []);
+    commands["add-item"](cwd, ["Dark mode"]);
+    const result = commands.show(cwd, []);
+    expect(result).toContain("Dark mode");
+  });
+
+  it("show --json renders structured data", () => {
+    commands.init(cwd, []);
+    commands["add-item"](cwd, ["Dark mode"]);
+    const result = commands.show(cwd, ["--json"]) as string;
+    expect(JSON.parse(result).backlog[0].title).toBe("Dark mode");
+  });
 });

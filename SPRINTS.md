@@ -43,19 +43,27 @@ a scratch directory; resulting `items.jsonl`/`sprints.json` are valid and inspec
 
 ---
 
-## SPRINT the-reader   (position 20)
+## ✅ SPRINT the-reader   (position 20)
 
 **goal:** make reading so good the agent never wants to open a raw file. This is the linchpin that keeps the "LLM only reads via commands" boundary intact.
 
 ```
-#11  ready  show (pretty) — the whole-plan scan: backlog first, then sprints by position, active marked
-#12  ready  show --json — identical content, structured, as the agent feed
-#13  ready  Guarantee pretty and --json render from the same data path (can't disagree)
-#14  ready  Filters: --sprint <name>, --done
-#15  ready  Mark the active sprint and show it first
+#11  done  show (pretty) — the whole-plan scan: backlog first, then sprints by position, active marked
+#12  done  show --json — identical content, structured, as the agent feed
+#13  done  Guarantee pretty and --json render from the same data path (can't disagree)
+#14  done  Filters: --sprint <name>, --done
+#15  done  Mark the active sprint and show it first
 ```
 
-**Exit check:** `show --json` contains everything an agent would otherwise need to read files for — items with id/title/status/sprint/has_spec, sprints with name/position/status/goal/notes.
+Resolved during implementation: default `show` hides both done items and done
+sprints entirely (`--done` reveals everything); `--sprint <name>` shows only that
+sprint's items and omits the backlog section, but an explicit `--sprint` on a done
+sprint still shows it (the explicit ask overrides the default-hide rule).
+
+**Exit check:** ✅ verified — `show --json` contains everything an agent would
+otherwise need to read files for (items with id/title/status/sprint/hasSpec, sprints
+with name/position/status/goal/notes/active), confirmed against a scratch directory
+seeded to match the README's example plan.
 
 ---
 
