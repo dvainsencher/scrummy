@@ -197,4 +197,5 @@ roadmap init
 
 ## Status
 
-Greenfield. See `SPRINTS.md` for the build plan.
+The `foundation` sprint (the whole mechanical layer — init, schema, CLI commands,
+backlog filter) is done; see `SPRINTS.md` for the build plan and what's next.

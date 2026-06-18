@@ -14,30 +14,32 @@ These are real ideas we discussed and chose *not* to schedule yet. They live in 
 #101  idea   External inspector agent — run from outside a repo, manage its roadmap without coding in it
 #102  idea   "Feature helper" mode — discuss/extract features from a project (explicitly out of scope for now; scope creep risk)
 #103  idea   Scratchpad import helper — hand a notes file to the agent, it emits add-item calls
-#104  idea   Decide raw-file readability: do the on-disk files need to be human-readable on their own, or is `show` enough?
+#104  done   Decide raw-file readability: resolved — JSONL/JSON only, not hand-readable; `show` is the only human-facing view (see CLAUDE.md)
 ```
 
 ---
 
-## ▶ SPRINT foundation   (position 10)
+## ✅ SPRINT foundation   (position 10)
 
 **goal:** a fully working flat-file tracker driven entirely by hand, with no LLM anywhere. This is the whole mechanical layer.
 
 ```
-#0   ready  roadmap init — scaffold roadmap/ (empty items, sprints, specs/) in a project; mechanical, no LLM
-#1   ready  Decide & document the serialization format (JSONL items + JSON sprints recommended; resolve #104)
-#2   ready  Define the on-disk schema for an item (id, title, status, sprint) and a sprint (name, position, status, goal, notes)
-#3   ready  id allocation — short monotonic integers, stable across edits
-#4   ready  add-item / edit-item / remove-item
-#5   ready  create-sprint / edit-sprint
-#6   ready  move <id> <sprint> and move <id> --backlog
-#7   ready  set-status (item) and set-sprint-status / set-active (sprint)
-#8   ready  set-position (advisory sort, sparse with gaps of 10)
-#9   ready  spec <id> — create/return specs/<id>.md, and derive has_spec from file existence
-#10  ready  Backlog = items with empty sprint (no special storage; just a filter)
+#0   done  pauta init — scaffold docs/roadmap/ (empty items, sprints, specs/) in a project; mechanical, no LLM
+#1   done  Decide & document the serialization format (JSONL items + JSON sprints; resolves #104)
+#2   done  Define the on-disk schema for an item (id, title, status, sprint) and a sprint (name, position, status, goal, notes)
+#3   done  id allocation — short monotonic integers, stable across edits
+#4   done  add-item / edit-item / remove-item
+#5   done  create-sprint / edit-sprint
+#6   done  move <id> <sprint> and move <id> --backlog
+#7   done  set-status (item) and set-sprint-status / set-active (sprint)
+#8   done  set-position (advisory sort, sparse with gaps of 10)
+#9   done  spec <id> — create/return specs/<id>.md, and derive has_spec from file existence
+#10  done  Backlog = items with empty sprint (no special storage; just a filter)
 ```
 
-**Exit check:** you can build a small real plan by typing commands, and the files on disk are valid and diff cleanly.
+**Exit check:** ✅ verified — built a small real plan via `pauta init` → `create-sprint`
+→ `add-item` → `move` → `set-status` → `set-active` → `set-position` → `spec` against
+a scratch directory; resulting `items.jsonl`/`sprints.json` are valid and inspected by hand.
 
 ---
 
