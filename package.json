@@ -1,0 +1,23 @@
+{
+  "name": "pauta",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "pauta": "./dist/bin/pauta.js"
+  },
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json && chmod +x dist/bin/pauta.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "dev": "tsx src/bin/pauta.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  }
+}

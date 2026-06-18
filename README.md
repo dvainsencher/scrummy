@@ -1,10 +1,8 @@
-# roadmap
+# pauta
 
 A flat-file backlog and sprint manager for solo developers and small teams — built to be driven both by a human at a terminal and by a coding agent (e.g. Claude Code) over the **same files**.
 
 It is, in essence, a tiny issue tracker that lives in your repo, with one defining idea: **sprints are context batches, not time boxes.**
-
-> Working name. Rename the project and the CLI command (`roadmap`) to whatever you like.
 
 ---
 
@@ -77,7 +75,7 @@ Everything follows from this:
         └──────────────────┘   └───────────┬────────────┘
                                             │ sole mutators
                                             ▼
-                              roadmap/  (files in the repo)
+                              docs/roadmap/  (files in the repo)
 ```
 
 ---
@@ -93,7 +91,8 @@ docs/roadmap/
     12.md
 ```
 
-> **Open decision (see sprint plan, task #1):** JSON Lines is the recommended default because the reader provides human-readable output, so the raw file doesn't need to be pretty. If you want the raw files to also be readable on their own as a fallback, a markdown-with-structure format is the alternative — at the cost of more fragile parsing.
+> **Resolved** (see `CLAUDE.md`): JSON Lines, not meant to be human-readable on its
+> own — `pauta show` is the only human-facing view.
 
 ---
 
@@ -102,29 +101,33 @@ docs/roadmap/
 ### Writers (mechanical · zero tokens · the only mutators)
 
 ```
-roadmap init                               # scaffold roadmap/ in a project (empty items, sprints, specs/)
+pauta init                                 # scaffold docs/roadmap/ in a project (empty items, sprints, specs/)
 
-roadmap add-item "<title>" [--status idea|ready] [--sprint <name>]   # prints new id
-roadmap edit-item <id> [--title "..."] [--status ...]
-roadmap remove-item <id>
-roadmap move <id> <sprint-name>            # assign to a sprint
-roadmap move <id> --backlog                # send back to the inbox
-roadmap set-status <id> <status>
+pauta add-item "<title>" [--status idea|ready] [--sprint <name>]   # prints new id
+pauta edit-item <id> [--title "..."] [--status ...]
+pauta remove-item <id>
+pauta move <id> <sprint-name>              # assign to a sprint
+pauta move <id> --backlog                  # send back to the inbox
+pauta set-status <id> <status>
 
-roadmap create-sprint <name> --goal "..." [--notes "..."] [--position <n>]
-roadmap edit-sprint <name> [--goal "..."] [--notes "..."]
-roadmap set-position <name> <n>            # advisory sort only
-roadmap set-active <name>                  # mark which sprint you're working on
-roadmap set-sprint-status <name> <planned|active|done>
+pauta create-sprint <name> --goal "..." [--notes "..."] [--position <n>]
+pauta edit-sprint <name> [--goal "..."] [--notes "..."]
+pauta set-position <name> <n>              # advisory sort only
+pauta set-active <name>                    # mark which sprint you're working on
+pauta set-sprint-status <name> <planned|active|done>
 
-roadmap spec <id>                          # create/return path to specs/<id>.md
+pauta spec <id>                            # create/return path to specs/<id>.md
 ```
+
+All of the above are implemented (`SPRINTS.md`'s `foundation` sprint).
 
 ### Reader (the linchpin — rich enough that the agent never opens raw files)
 
+> **Not yet implemented** — next up in `SPRINTS.md`'s `the-reader` sprint.
+
 ```
-roadmap show [--sprint <name>] [--done]    # the human-scannable whole plan
-roadmap show --json                        # same content, structured, for the agent
+pauta show [--sprint <name>] [--done]      # the human-scannable whole plan
+pauta show --json                          # same content, structured, for the agent
 ```
 
 Default `show` output:
@@ -152,9 +155,11 @@ The pretty view and the `--json` view render from the same data, so they can't d
 
 ### Smart ops (use an LLM · cost tokens · invoked deliberately)
 
+> **Not yet implemented** — `SPRINTS.md`'s `smart-ops` sprint.
+
 ```
-roadmap suggest-batches      # reads everything, proposes sprint groupings; you confirm
-roadmap bootstrap            # reads repo code + docs, proposes an initial set of items/sprints
+pauta suggest-batches        # reads everything, proposes sprint groupings; you confirm
+pauta bootstrap               # reads repo code + docs, proposes an initial set of items/sprints
 ```
 
 `bootstrap` works on an existing codebase *or* a greenfield project with only docs (or nothing).
@@ -165,7 +170,7 @@ roadmap bootstrap            # reads repo code + docs, proposes an initial set o
 
 The same CLI is invoked two ways:
 
-- **By you, by hand** — `roadmap add-item "..."` at the terminal, or migrating a scratchpad note.
+- **By you, by hand** — `pauta add-item "..."` at the terminal, or migrating a scratchpad note.
 - **By an agent, via a Claude Code skill** — after a feature discussion, the agent reads `show --json`, reasons, and calls the writer commands. It never edits the files directly.
 
 The capture flows this supports:
@@ -179,16 +184,16 @@ An external inspector agent (looking at a project you're *not* actively coding i
 
 ## Install & setup
 
-Two things get installed into a project: the **CLI** (so `roadmap` runs) and the **Claude Code skills** (so the agent can drive it). Then `init` scaffolds the data directory.
+Two things get installed into a project: the **CLI** (so `pauta` runs) and the **Claude Code skills** (so the agent can drive it). Then `init` scaffolds the data directory.
 
 ```
 # 1. get the CLI (script on PATH, or repo-local) — see install docs
 # 2. install the skill files into the project's Claude Code skills location
 # 3. scaffold the data dir
-roadmap init
+pauta init
 ```
 
-**Existing project:** `init`, then `roadmap bootstrap` to read the code and propose a starting plan.
+**Existing project:** `init`, then `pauta bootstrap` to read the code and propose a starting plan.
 **New project:** `init`, then optionally `bootstrap` from docs alone (or start empty and add items by hand).
 
 `init` and the CLI are mechanical (no LLM); only `bootstrap` reads content and costs tokens.
@@ -197,4 +202,5 @@ roadmap init
 
 ## Status
 
-Greenfield. See `SPRINTS.md` for the build plan.
+The `foundation` sprint (the whole mechanical layer — init, schema, CLI commands,
+backlog filter) is done; see `SPRINTS.md` for the build plan and what's next.
