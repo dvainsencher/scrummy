@@ -90,18 +90,27 @@ overwriting on re-run.
 
 ---
 
-## SPRINT smart-ops   (position 40)
+## ✅ SPRINT smart-ops   (position 40)
 
 **goal:** the token-using layer — the only part that reaches for a model. Sits above the mechanical line; reads via `show --json`, writes via the same writer commands.
 
 ```
-#20  idea   suggest-batches — read all items, propose related groupings as sprints, present for confirmation
-#21  idea   bootstrap — read repo code + docs, propose an initial set of items and sprints
-#22  idea   bootstrap for greenfield — docs-only or empty project, no code to read
-#23  idea   Confirmation flow — smart ops propose command calls; nothing is written until you approve
+#20  done   suggest-batches — read all items, propose related groupings as sprints, present for confirmation (skills/pauta-suggest-batches)
+#21  done   bootstrap — read repo code + docs, propose an initial set of items and sprints (skills/pauta-bootstrap)
+#22  done   bootstrap for greenfield — docs-only or empty project, no code to read (same skill, branches on whether there's code to read)
+#23  done   Confirmation flow — smart ops propose command calls; nothing is written until you approve (same "propose in chat, then execute" pattern as pauta-reorganize, baked into both new skills)
 ```
 
-**Exit check:** point `bootstrap` at an existing repo and get a sensible starting plan you can accept or edit; `suggest-batches` turns a messy backlog into proposed context batches.
+Resolved during implementation: these are Claude Code skills, not new `pauta`
+CLI subcommands — the CLI stays purely mechanical (no LLM, no API key handling)
+and `install-skills` already copies any directory under `skills/` generically, so
+no CLI changes were needed to ship the two new skills.
+
+**Exit check:** ✅ verified — `skills/pauta-bootstrap/SKILL.md` and
+`skills/pauta-suggest-batches/SKILL.md` follow the same read-via-`show --json` /
+propose-in-chat / write-via-writer-commands pattern as the existing skills, and
+`pauta install-skills` (generic over `skills/` subdirectories, confirmed by its
+existing tests) picks both up without any code change.
 
 ---
 

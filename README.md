@@ -159,14 +159,17 @@ The pretty view and the `--json` view render from the same data, so they can't d
 
 ### Smart ops (use an LLM · cost tokens · invoked deliberately)
 
-> **Not yet implemented** — `SPRINTS.md`'s `smart-ops` sprint.
+These are Claude Code skills, not `pauta` subcommands — `pauta` itself never calls
+an LLM. The skill reads via `pauta show --json`, reasons, proposes the plan in
+chat, and on confirmation writes only via the same writer commands a human would
+type.
 
 ```
-pauta suggest-batches        # reads everything, proposes sprint groupings; you confirm
-pauta bootstrap               # reads repo code + docs, proposes an initial set of items/sprints
+pauta-suggest-batches        # skill: reads the backlog, proposes sprint groupings; you confirm
+pauta-bootstrap              # skill: reads repo code + docs, proposes an initial set of items/sprints
 ```
 
-`bootstrap` works on an existing codebase *or* a greenfield project with only docs (or nothing).
+`pauta-bootstrap` works on an existing codebase *or* a greenfield project with only docs (or nothing).
 
 ---
 
@@ -208,26 +211,27 @@ npx pauta init              # scaffold docs/roadmap/ (empty items, sprints, spec
 npx pauta install-skills    # copy the Claude Code skill files into .claude/skills/
 ```
 
-`install-skills` is mechanical (no LLM) — it copies `pauta-add-item` and
-`pauta-reorganize` from the installed package's own `skills/` directory into the
-project's `.claude/skills/`, overwriting on re-run. Once installed, the skills
-themselves enforce the one rule: read via `pauta show --json`, write only via
-`pauta` commands, never touch `docs/roadmap/*` directly.
+`install-skills` is mechanical (no LLM) — it copies every skill directory
+(`pauta-add-item`, `pauta-reorganize`, `pauta-suggest-batches`, `pauta-bootstrap`)
+from the installed package's own `skills/` directory into the project's
+`.claude/skills/`, overwriting on re-run. Once installed, the skills themselves
+enforce the one rule: read via `pauta show --json`, write only via `pauta`
+commands, never touch `docs/roadmap/*` directly.
 
-**Existing project:** `init`, then `install-skills`, then add items by hand (or via
-the `pauta-add-item` skill during a feature discussion) until `bootstrap` — which
-reads your existing code to propose a starting plan — ships in a future sprint
-(see `SPRINTS.md`'s `smart-ops` sprint; not built yet).
-**New project:** same — `init`, `install-skills`, start empty or add items as ideas
-come up.
+**Existing project:** `init`, then `install-skills`, then either add items by hand
+(or via the `pauta-add-item` skill during a feature discussion), or ask the agent
+to run the `pauta-bootstrap` skill to seed a starting plan from your existing code.
+**New project:** same — `init`, `install-skills`, then `pauta-bootstrap` from
+whatever docs exist (or start empty and add items as ideas come up).
 
-`init`, the CLI, and `install-skills` are all mechanical (no LLM); only `bootstrap`
-(future) reads content and costs tokens.
+`init`, the CLI, and `install-skills` are all mechanical (no LLM); only the
+`pauta-suggest-batches` and `pauta-bootstrap` skills read content and cost tokens.
 
 ---
 
 ## Status
 
-`foundation`, `the-reader`, and `agent-skills` sprints are done — the whole
-mechanical layer, `show`/`show --json`, and the Claude Code skills that drive it.
+`foundation`, `the-reader`, `agent-skills`, and `smart-ops` sprints are done — the
+whole mechanical layer, `show`/`show --json`, and the Claude Code skills (including
+`pauta-suggest-batches` and `pauta-bootstrap`) that drive it.
 See `SPRINTS.md` for the build plan and what's next.
