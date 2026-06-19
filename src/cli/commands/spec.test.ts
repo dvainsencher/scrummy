@@ -21,10 +21,12 @@ describe("spec", () => {
     fs.rmSync(cwd, { recursive: true, force: true });
   });
 
-  it("creates the spec file with a minimal template if absent", () => {
+  it("creates the spec file with a fixed-section skeleton if absent", () => {
     const returnedPath = spec(cwd, id);
     expect(returnedPath).toBe(specFilePath(cwd, id));
-    expect(fs.readFileSync(returnedPath, "utf8")).toBe("# Dark mode\n");
+    expect(fs.readFileSync(returnedPath, "utf8")).toBe(
+      "# Dark mode\n\n## Problem\n\n## Approach\n\n## Acceptance criteria\n\n## Open questions\n",
+    );
   });
 
   it("returns the existing path without overwriting an existing spec", () => {

@@ -113,14 +113,14 @@ existing tests) picks both up without any code change.
 
 ---
 
-## SPRINT install-skills-polish   (position 50)
+## ✅ SPRINT install-skills-polish   (position 50)
 
 **goal:** close out two small PR #4 review items and one blank-page-friction fix. All three are scoped CLI changes, no design open questions.
 
 ```
-#105  idea   install-skills: friendly error when the package's skills/ source dir is missing/unreadable, matching the assertX-style validation used elsewhere in src/domain/validation.ts (raised in PR #4 review)
-#106  idea   install-skills: add a test covering the missing-source-dir path once #105 lands (raised in PR #4 review)
-#107  idea   pauta spec <id>: scaffold new spec files with a fixed-section skeleton (Problem / Approach / Acceptance criteria / Open questions) instead of an empty file — less blank-page friction, same lightweight philosophy (only new files get the skeleton; existing specs are untouched)
+#105  done   install-skills: friendly error when the package's skills/ source dir is missing/unreadable, matching the assertX-style validation used elsewhere in src/domain/validation.ts (raised in PR #4 review)
+#106  done   install-skills: add a test covering the missing-source-dir path once #105 lands (raised in PR #4 review)
+#107  done   pauta spec <id>: scaffold new spec files with a fixed-section skeleton (Problem / Approach / Acceptance criteria / Open questions) instead of an empty file — less blank-page friction, same lightweight philosophy (only new files get the skeleton; existing specs are untouched)
 ```
 
 ---

@@ -11,7 +11,8 @@ export function spec(cwd: string, id: number): string {
   if (!fs.existsSync(filePath)) {
     fs.mkdirSync(specsDir(cwd), { recursive: true });
     const issue = issues.find((candidate) => candidate.id === id);
-    fs.writeFileSync(filePath, `# ${issue?.title}\n`);
+    const skeleton = `# ${issue?.title}\n\n## Problem\n\n## Approach\n\n## Acceptance criteria\n\n## Open questions\n`;
+    fs.writeFileSync(filePath, skeleton);
   }
 
   return filePath;

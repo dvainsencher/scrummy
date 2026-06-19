@@ -67,4 +67,11 @@ describe("installSkills", () => {
     installSkills(cwd, sourceDir);
     expect(fs.statSync(path.join(cwd, ".claude", "skills")).isDirectory()).toBe(true);
   });
+
+  it("throws a friendly error when the source skills directory is missing", () => {
+    const missingDir = path.join(sourceDir, "does-not-exist");
+    expect(() => installSkills(cwd, missingDir)).toThrow(
+      `Skills source directory "${missingDir}" does not exist`,
+    );
+  });
 });

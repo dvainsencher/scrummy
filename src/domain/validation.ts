@@ -1,3 +1,4 @@
+import { statSync } from "node:fs";
 import { ISSUE_STATUSES, SPRINT_STATUSES, type Issue, type Sprint } from "./types.js";
 
 export function assertSprintExists(sprints: Sprint[], name: string): void {
@@ -31,5 +32,17 @@ export function assertSprintStatus(status: string): void {
     throw new Error(
       `Invalid sprint status "${status}" — must be one of: ${SPRINT_STATUSES.join(", ")}`,
     );
+  }
+}
+
+export function assertDirectoryExists(dirPath: string, label: string): void {
+  let stats;
+  try {
+    stats = statSync(dirPath);
+  } catch {
+    throw new Error(`${label} "${dirPath}" does not exist`);
+  }
+  if (!stats.isDirectory()) {
+    throw new Error(`${label} "${dirPath}" is not a directory`);
   }
 }
