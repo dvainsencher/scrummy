@@ -13,10 +13,13 @@ These are real ideas we discussed and chose *not* to schedule yet. They live in 
 ```
 #101  idea   External inspector agent — run from outside a repo, manage its roadmap without coding in it
 #102  idea   "Feature helper" mode — discuss/extract features from a project (explicitly out of scope for now; scope creep risk)
-#103  idea   Scratchpad import helper — hand a notes file to the agent, it emits add-issue calls
+#103  idea   Scratchpad-to-issues skill (supersedes the original "emit add-issue calls" framing) — a pre-backlog/pre-sprint interactive step: read a messy notes/scratchpad file, discuss unclear points with the user, then transform notes into issues (and specs where warranted) via the writer commands. Richer than pauta-bootstrap (which seeds from existing code/docs) and pauta-suggest-batches (which only regroups existing issues) — this one's input is unstructured prose, not the existing plan.
 #104  done   Decide raw-file readability: resolved — JSONL/JSON only, not hand-readable; `show` is the only human-facing view (see CLAUDE.md)
 #105  idea   install-skills: friendly error when the package's skills/ source dir is missing/unreadable, matching the assertX-style validation used elsewhere in src/cli/commands (raised in PR #4 review)
 #106  idea   install-skills: add a test covering the missing-source-dir path once #105 lands (raised in PR #4 review)
+#107  idea   pauta spec <id>: scaffold new spec files with a fixed-section skeleton (Problem / Approach / Acceptance criteria / Open questions) instead of an empty file — less blank-page friction, same lightweight philosophy (only new files get the skeleton; existing specs are untouched)
+#108  idea   pauta-add-issue skill: before calling add-issue, judge whether the title alone is clear enough to implement later; if not, ask the user a calibrating "why"/context question first rather than filing an underspecified issue silently
+#109  note   AskUserQuestion (or any structured clarifying-question UI) has no equivalent in most other agentic tools (Cursor/Aider/Windsurf just ask inline in chat) — any pauta skill that asks clarifying questions should degrade to plain chat prompts, not assume a structured widget exists
 ```
 
 ---
