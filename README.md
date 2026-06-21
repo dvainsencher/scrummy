@@ -167,9 +167,15 @@ type.
 ```
 pauta-suggest-batches        # skill: reads the backlog, proposes sprint groupings; you confirm
 pauta-bootstrap              # skill: reads repo code + docs, proposes an initial set of issues/sprints
+pauta-scratchpad-import      # skill: reads a messy notes file, files one issue per idea; you confirm
+pauta-refine                 # skill: checks a candidate or existing issue for clarity/consistency/spec quality
 ```
 
 `pauta-bootstrap` works on an existing codebase *or* a greenfield project with only docs (or nothing).
+`pauta-scratchpad-import` is for unstructured prose with no fixed shape — notes
+jotted for your own future reference, not an existing plan. `pauta-refine` doesn't
+file or move anything itself; `pauta-add-issue` and `pauta-scratchpad-import` both
+call it as a quality check before filing.
 
 ---
 
@@ -183,7 +189,7 @@ The same CLI is invoked two ways:
 The capture flows this supports:
 
 - **At the desk:** discuss with the agent → "add this and slot it" → agent emits the right commands.
-- **Away from the desk:** jot into a dumb scratchpad file → later run `add-issue` per note (yourself, or hand the scratchpad to the agent and say "import these"). The CLI is the single funnel every note passes through to become a real issue — so you never copy-paste into the roadmap files by hand.
+- **Away from the desk:** jot into a dumb scratchpad file → later run `add-issue` per note yourself, or hand the scratchpad to the agent and say "import these" (the `pauta-scratchpad-import` skill). The CLI is the single funnel every note passes through to become a real issue — so you never copy-paste into the roadmap files by hand.
 
 An external inspector agent (looking at a project you're *not* actively coding in) is the same system pointed at the same files from outside — a deployment choice, not a separate architecture.
 
@@ -212,11 +218,12 @@ npx pauta install-skills    # copy the Claude Code skill files into .claude/skil
 ```
 
 `install-skills` is mechanical (no LLM) — it copies every skill directory
-(`pauta-add-issue`, `pauta-reorganize`, `pauta-suggest-batches`, `pauta-bootstrap`)
-from the installed package's own `skills/` directory into the project's
-`.claude/skills/`, overwriting on re-run. Once installed, the skills themselves
-enforce the one rule: read via `pauta show --json`, write only via `pauta`
-commands, never touch `docs/roadmap/*` directly.
+(`pauta-add-issue`, `pauta-reorganize`, `pauta-suggest-batches`, `pauta-bootstrap`,
+`pauta-scratchpad-import`, `pauta-refine`) from the installed package's own
+`skills/` directory into the project's `.claude/skills/`, overwriting on re-run.
+Once installed, the skills themselves enforce the one rule: read via
+`pauta show --json`, write only via `pauta` commands, never touch
+`docs/roadmap/*` directly.
 
 **Existing project:** `init`, then `install-skills`, then either add issues by hand
 (or via the `pauta-add-issue` skill during a feature discussion), or ask the agent
@@ -231,7 +238,8 @@ whatever docs exist (or start empty and add issues as ideas come up).
 
 ## Status
 
-`foundation`, `the-reader`, `agent-skills`, and `smart-ops` sprints are done — the
-whole mechanical layer, `show`/`show --json`, and the Claude Code skills (including
-`pauta-suggest-batches` and `pauta-bootstrap`) that drive it.
+`foundation`, `the-reader`, `agent-skills`, `smart-ops`, `install-skills-polish`,
+and `issue-quality` sprints are done — the whole mechanical layer, `show`/
+`show --json`, and the Claude Code skills (including `pauta-suggest-batches`,
+`pauta-bootstrap`, `pauta-scratchpad-import`, and `pauta-refine`) that drive it.
 See `SPRINTS.md` for the build plan and what's next.

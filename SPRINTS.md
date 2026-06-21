@@ -2,7 +2,7 @@
 
 A **soft** plan — sprints are context batches, positions are advisory, and the order is a suggestion you can abandon. Laid out roughly the way `roadmap show` would render it, because we may as well eat our own dog food.
 
-Four sprints. Each is independently valuable; after `foundation` alone you have a working flat-file tracker you can drive by hand.
+Each sprint is independently valuable; after `foundation` alone you have a working flat-file tracker you can drive by hand.
 
 ---
 
@@ -125,16 +125,17 @@ existing tests) picks both up without any code change.
 
 ---
 
-## SPRINT issue-quality   (position 60)
+## ✅ SPRINT issue-quality   (position 60)
 
 **goal:** stop underspecified issues from being filed silently — the pauta-add-issue skill should recognize a too-vague title and ask one calibrating question before calling `add-issue`.
 
 ```
-#103  idea   Scratchpad-to-issues skill — a pre-backlog/pre-sprint interactive step: read a messy notes/scratchpad file, discuss unclear points with the user, then transform notes into issues (and specs where warranted) via the writer commands. Richer than pauta-bootstrap (seeds from existing code/docs) and pauta-suggest-batches (only regroups existing issues) — this one's input is unstructured prose.
-#108  idea   pauta-add-issue skill: before calling add-issue, apply a title-length/vagueness heuristic (short titles, or generic patterns like "fix X" / "improve Y") — if it trips, ask the user one calibrating "why"/context question before filing; otherwise file as-is. Must degrade to plain chat prompts where AskUserQuestion isn't available (see BACKLOG #109).
+#103  done   Scratchpad-to-issues skill (skills/pauta-scratchpad-import) — a pre-backlog/pre-sprint interactive step: read a messy notes/scratchpad file, discuss unclear points with the user, then transform notes into issues (and specs where warranted) via the writer commands. Richer than pauta-bootstrap (seeds from existing code/docs) and pauta-suggest-batches (only regroups existing issues) — this one's input is unstructured prose.
+#108  done   pauta-add-issue skill: before calling add-issue, apply a title-length/vagueness heuristic (short titles, or generic patterns like "fix X" / "improve Y") — if it trips, ask the user one calibrating "why"/context question before filing; otherwise file as-is. Must degrade to plain chat prompts where AskUserQuestion isn't available (see BACKLOG #109).
+#110  done   pauta-refine skill (skills/pauta-refine) — shared quality check (definition clarity, consistency against the existing backlog, spec completeness) extracted out of #108's heuristic so #103 and #108 both call the same helper instead of duplicating it. Also usable standalone on an existing issue.
 ```
 
-Design decision: the trigger for #108 is a heuristic (title length / vague-verb pattern match), not an open-ended model judgment call — chosen for predictability and testability over flexibility.
+Design decisions: the trigger for #108/#110 is a heuristic (title length / vague-verb pattern match), not an open-ended model judgment call — chosen for predictability and testability over flexibility. #110 was added mid-sprint (not in the original two-item plan) once it became clear #103 and #108 needed the same check — centralizing it avoids drift between the two copies.
 
 ---
 

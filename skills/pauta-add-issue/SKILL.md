@@ -23,14 +23,20 @@ could open.
    - **sprint** — leave unset (backlog) unless the discussion clearly ties it to an
      existing sprint by name; don't invent a new sprint just to file one issue (that's
      a job for the reorganize skill, not this one).
-3. Call `pauta add-issue "<title>" [--status idea|ready] [--sprint <name>]`. It prints
+3. Before filing, run `pauta-refine`'s definition-clarity check on the candidate
+   title (there's no spec yet at this point, so only the clarity check applies —
+   consistency/spec-quality are for `pauta-refine` to apply once the issue exists).
+   If it trips, ask the user one calibrating "why"/context question before filing
+   — don't assume a structured question UI is available, a plain chat question
+   works too (see BACKLOG #109). Otherwise file as-is.
+4. Call `pauta add-issue "<title>" [--status idea|ready] [--sprint <name>]`. It prints
    the new issue's id.
-4. If the discussion produced more than a one-line idea — open questions, design
+5. If the discussion produced more than a one-line idea — open questions, design
    notes, acceptance criteria — run `pauta spec <id>` to create `specs/<id>.md`, then
    write the detail into that file with your normal file-editing tools (the spec
    *content* isn't roadmap metadata, so editing it directly is fine — only
    `issues.jsonl`/`sprints.json` and spec *creation* go through the CLI).
-5. If the user is describing an issue that already exists but should move sprints,
+6. If the user is describing an issue that already exists but should move sprints,
    use `pauta move <id> <sprint-name>` or `pauta move <id> --backlog` instead of
    adding a duplicate.
 
