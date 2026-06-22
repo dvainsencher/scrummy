@@ -113,6 +113,7 @@ pauta set-status <id> <status>
 
 pauta create-sprint <name> --goal "..." [--notes "..."] [--position <n>]
 pauta edit-sprint <name> [--goal "..."] [--notes "..."]
+pauta remove-sprint <name>                 # only if empty — move issues out first
 pauta set-position <name> <n>              # advisory sort only
 pauta set-active <name>                    # mark which sprint you're working on
 pauta set-sprint-status <name> <planned|active|done>

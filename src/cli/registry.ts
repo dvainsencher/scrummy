@@ -6,6 +6,7 @@ import { importFromFile } from "./commands/import.js";
 import { init } from "./commands/init.js";
 import { move, moveToBacklog } from "./commands/move.js";
 import { removeIssue } from "./commands/removeIssue.js";
+import { removeSprint } from "./commands/removeSprint.js";
 import { setActive } from "./commands/setActive.js";
 import { setPosition } from "./commands/setPosition.js";
 import { setSprintStatus } from "./commands/setSprintStatus.js";
@@ -72,6 +73,12 @@ export const commands: Record<string, CommandHandler> = {
       goal: parsed.flags.goal as string | undefined,
       notes: parsed.flags.notes as string | undefined,
     });
+  },
+
+  "remove-sprint": (cwd, args) => {
+    const parsed = parseArgs(args);
+    const name = requirePositional(parsed, 0, "name");
+    removeSprint(cwd, name);
   },
 
   move: (cwd, args) => {

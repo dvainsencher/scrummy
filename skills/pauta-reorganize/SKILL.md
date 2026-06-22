@@ -32,9 +32,13 @@ of position order is normal, not a problem to fix.
    - `pauta move <id> <sprint-name>` / `pauta move <id> --backlog` to reassign issues
    - `pauta set-position <name> <n>` to reorder sprints
    - `pauta edit-sprint <name> [--goal "..."] [--notes "..."]` to refine a goal
-5. Do not delete or rename sprints — there's no `remove-sprint` command; if a sprint
-   is no longer useful, move its issues elsewhere and leave it `done`/empty rather
-   than working around the missing command.
+5. There's no `rename-sprint` command — if a sprint needs a new name, recreate it
+   under the new name, move its issues over, then remove the old one via
+   `pauta remove-sprint <name>` (see below).
+6. If a reorg leaves a sprint with no issues, don't suggest leaving it around
+   `done`/empty as a placeholder — propose deleting it and ask the user to
+   confirm before running `pauta remove-sprint <name>` (it only succeeds once the
+   sprint is actually empty, so move its issues out first if any remain).
 
 After executing, summarize what moved in one short list — don't re-print the whole
 plan unless asked.

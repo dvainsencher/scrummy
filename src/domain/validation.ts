@@ -19,6 +19,12 @@ export function assertSprintNameAvailable(sprints: Sprint[], name: string): void
   }
 }
 
+export function assertSprintEmpty(issues: Issue[], name: string): void {
+  if (issues.some((issue) => issue.sprint === name)) {
+    throw new Error(`Sprint "${name}" still has issues assigned — move them out first`);
+  }
+}
+
 export function assertIssueStatus(status: string): void {
   if (!ISSUE_STATUSES.includes(status as Issue["status"])) {
     throw new Error(

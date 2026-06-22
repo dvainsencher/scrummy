@@ -45,6 +45,13 @@ describe("command registry", () => {
     expect(readIssues(cwd)[0].sprint).toBe("");
   });
 
+  it("remove-sprint deletes an empty sprint", () => {
+    commands.init(cwd, []);
+    commands["create-sprint"](cwd, ["foundation", "--goal", "g"]);
+    commands["remove-sprint"](cwd, ["foundation"]);
+    expect(readSprints(cwd)).toEqual([]);
+  });
+
   it("set-active marks the sprint active", () => {
     commands.init(cwd, []);
     commands["create-sprint"](cwd, ["foundation", "--goal", "g"]);
