@@ -34,6 +34,16 @@ one you're in before reading further:
    if the legacy doc lives there) and the rest of the migration. Don't run
    `pauta init` yourself first in this case; `pauta-migrate` does it after the
    rename.
+
+   While you're here, also check the project's `CLAUDE.md` (and watch for
+   conflicting *global* instructions, e.g. a `~/.claude/CLAUDE.md` directive to
+   sync `ROADMAP.md` before every PR) for a "Roadmap" section, a directive to
+   mark `ROADMAP.md`/similar items done before publishing, or a custom
+   `/roadmap`-style skill — any of these will keep firing after migration and
+   fight pauta's CLI-only-writer rule. If you find one, flag it to the user now,
+   even though the actual fix (replacing it with the pauta-pointer block) only
+   gets *proposed* once `pauta-audit` confirms the migration is clean — don't
+   wait for the user to stumble onto the conflict on their own.
 1. Run `pauta show --json` first regardless of case — if it already has issues or
    sprints, this isn't a bootstrap anymore; stop and suggest `pauta-suggest-batches`
    or `pauta-add-issue` instead.
