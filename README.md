@@ -191,7 +191,11 @@ separate, explicitly-invoked actions on purpose, never bundled into one step.
 `pauta-scratchpad-import` is for unstructured prose with no fixed shape — notes
 jotted for your own future reference, not an existing plan. `pauta-refine` doesn't
 file or move anything itself; `pauta-add-issue` and `pauta-scratchpad-import` both
-call it as a quality check before filing.
+call it as a quality check before filing. `pauta-refine` also has an explicit
+**batch mode** for running over a whole issue set at once (most commonly the
+issues a migration just created) — it asks up front whether you want findings one
+at a time or as a single batched list, and only acts on the decisions you actually
+approve; nothing gets silently merged or edited.
 
 ---
 
