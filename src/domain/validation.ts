@@ -1,4 +1,4 @@
-import { statSync } from "node:fs";
+import { existsSync, readdirSync, statSync } from "node:fs";
 import { ISSUE_STATUSES, SPRINT_STATUSES, type Issue, type Sprint } from "./types.js";
 
 export function assertSprintExists(sprints: Sprint[], name: string): void {
@@ -44,5 +44,17 @@ export function assertDirectoryExists(dirPath: string, label: string): void {
   }
   if (!stats.isDirectory()) {
     throw new Error(`${label} "${dirPath}" is not a directory`);
+  }
+}
+
+export function assertRoadmapDirNotForeign(roadmapDir: string, issuesFilePath: string): void {
+  if (!existsSync(roadmapDir) || existsSync(issuesFilePath)) {
+    return;
+  }
+  if (readdirSync(roadmapDir).length > 0) {
+    throw new Error(
+      `"${roadmapDir}" already exists and isn't a pauta-managed directory (no issues.jsonl found). ` +
+        `Move it out of the way first, e.g. "git mv docs/roadmap docs/roadmap-legacy", then run init again.`,
+    );
   }
 }
