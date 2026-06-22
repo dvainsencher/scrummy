@@ -41,4 +41,18 @@ describe("init", () => {
     init(cwd);
     expect(fs.readFileSync(issuesFilePath(cwd), "utf8")).toContain('"id":1');
   });
+
+  it("refuses to init when docs/roadmap/ already exists with non-pauta content", () => {
+    fs.mkdirSync(path.join(cwd, "docs", "roadmap"), { recursive: true });
+    fs.writeFileSync(path.join(cwd, "docs", "roadmap", "ROADMAP.md"), "# legacy backlog\n");
+    expect(() => init(cwd)).toThrow(/docs\/roadmap-legacy/);
+    expect(fs.existsSync(issuesFilePath(cwd))).toBe(false);
+  });
+
+  it("recovers from an init interrupted after specsDir was created but before issues.jsonl was written", () => {
+    fs.mkdirSync(specsDir(cwd), { recursive: true });
+    expect(() => init(cwd)).not.toThrow();
+    expect(fs.existsSync(issuesFilePath(cwd))).toBe(true);
+    expect(readIssues(cwd)).toEqual([]);
+  });
 });

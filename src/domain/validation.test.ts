@@ -1,12 +1,13 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Issue, Sprint } from "./types.js";
 import {
   assertDirectoryExists,
   assertIssueExists,
   assertIssueStatus,
+  assertRoadmapDirNotForeign,
   assertSprintExists,
   assertSprintNameAvailable,
   assertSprintStatus,
@@ -105,5 +106,43 @@ describe("assertDirectoryExists", () => {
     } finally {
       fs.rmSync(file, { force: true });
     }
+  });
+});
+
+describe("assertRoadmapDirNotForeign", () => {
+  let dir: string;
+
+  beforeEach(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), "pauta-test-roadmap-"));
+  });
+
+  afterEach(() => {
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("does not throw when the directory does not exist yet", () => {
+    const roadmapDir = path.join(dir, "docs", "roadmap");
+    expect(() => assertRoadmapDirNotForeign(roadmapDir)).not.toThrow();
+  });
+
+  it("does not throw when the directory is empty", () => {
+    expect(() => assertRoadmapDirNotForeign(dir)).not.toThrow();
+  });
+
+  it("does not throw when only pauta-owned entries exist (issues.jsonl, sprints.json, specs)", () => {
+    fs.writeFileSync(path.join(dir, "issues.jsonl"), "");
+    fs.writeFileSync(path.join(dir, "sprints.json"), "[]\n");
+    fs.mkdirSync(path.join(dir, "specs"));
+    expect(() => assertRoadmapDirNotForeign(dir)).not.toThrow();
+  });
+
+  it("does not throw when only a partial pauta init left specs/ behind (no issues.jsonl yet)", () => {
+    fs.mkdirSync(path.join(dir, "specs"));
+    expect(() => assertRoadmapDirNotForeign(dir)).not.toThrow();
+  });
+
+  it("throws when the directory has foreign content", () => {
+    fs.writeFileSync(path.join(dir, "ROADMAP.md"), "# legacy backlog\n");
+    expect(() => assertRoadmapDirNotForeign(dir)).toThrow(/docs\/roadmap-legacy/);
   });
 });
