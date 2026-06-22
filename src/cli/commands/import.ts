@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import type { Issue, IssueStatus } from "../../domain/types.js";
+import { nextId } from "../../domain/ids.js";
 import { assertIssueStatus, assertSprintExists } from "../../domain/validation.js";
 import { readIssues, writeIssues } from "../../storage/issuesStore.js";
 import { readSprints } from "../../storage/sprintsStore.js";
@@ -58,16 +59,18 @@ export function importIssues(cwd: string, entries: ImportEntry[]): number[] {
   });
 
   const existing = readIssues(cwd);
-  let id = existing.reduce((max, issue) => Math.max(max, issue.id), 0) + 1;
   const now = new Date().toISOString();
-  const created: Issue[] = entries.map((entry) => ({
-    id: id++,
-    title: entry.title,
-    status: (entry.status as IssueStatus | undefined) ?? "idea",
-    sprint: entry.sprint ?? "",
-    createdAt: now,
-    updatedAt: now,
-  }));
+  const created: Issue[] = [];
+  for (const entry of entries) {
+    created.push({
+      id: nextId([...existing, ...created]),
+      title: entry.title,
+      status: (entry.status as IssueStatus | undefined) ?? "idea",
+      sprint: entry.sprint ?? "",
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
 
   writeIssues(cwd, [...existing, ...created]);
   return created.map((issue) => issue.id);
