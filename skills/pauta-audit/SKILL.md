@@ -67,7 +67,8 @@ discrepancy, it reports it; it never fixes it.
     ## Roadmap
 
     This project tracks work with `pauta`, not ROADMAP.md/docs/sprints.md
-    (superseded — see `docs/roadmap-legacy/` for historical reference only). Run
+    (superseded — original history is in git, or `docs/roadmap-legacy/` if still
+    retained). Run
     `pauta show` for the current plan, `pauta show --json` for the agent-readable
     form. Do not use any `/roadmap`-style skill or apply a global roadmap-sync
     directive for this project — this section supersedes them.
@@ -77,3 +78,15 @@ discrepancy, it reports it; it never fixes it.
     that actually stops a global "sync the roadmap" habit from fighting `pauta`'s
     own writer commands. Skip this step entirely if discrepancies were found —
     don't propose closing the loop on a migration that isn't clean yet.
+11. **Only if step 8 found no discrepancies**, also offer to delete
+    `docs/roadmap-legacy/` now that the migration is verified — `pauta-migrate`
+    deliberately leaves it in place ("it stays until the user removes it
+    themselves") precisely so this audit can run against it first. Before
+    offering, check whether `pauta-refine`'s batch pass has already run over the
+    migrated set: its scope-detection reads `_migration-plan.md`'s presence to
+    know which issues were just migrated, so deleting the directory first would
+    remove that signal. If refine hasn't run yet, say so and suggest it as the
+    next step instead of offering deletion. Deletion itself is a plain
+    `rm -rf docs/roadmap-legacy` (it's not under `docs/roadmap/*`, so the
+    CLI-only-writer rule doesn't apply) — propose it in chat and only run it on
+    the user's explicit confirmation, never unprompted.
