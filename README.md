@@ -168,11 +168,20 @@ type.
 ```
 pauta-suggest-batches        # skill: reads the backlog, proposes sprint groupings; you confirm
 pauta-bootstrap              # skill: reads repo code + docs, proposes an initial set of issues/sprints
+pauta-migrate                # skill: full-fidelity port of an existing hand-rolled backlog doc, via a reviewable file artifact
 pauta-scratchpad-import      # skill: reads a messy notes file, files one issue per idea; you confirm
 pauta-refine                 # skill: checks a candidate or existing issue for clarity/consistency/spec quality
 ```
 
-`pauta-bootstrap` works on an existing codebase *or* a greenfield project with only docs (or nothing).
+`pauta-bootstrap` works on an existing codebase *or* a greenfield project with only
+docs (or nothing) — and detects a third case, an existing hand-rolled backlog doc
+(`ROADMAP.md`, `docs/sprints.md`, `TODO.md`, ...), handing off to `pauta-migrate`
+for that one. Unlike the other smart ops, `pauta-migrate` doesn't propose in chat —
+it writes a markdown mapping table to `docs/roadmap-legacy/_migration-plan.md` for
+you to read and edit directly, and executes only the (possibly edited) file once
+you approve it; ambiguities (possible duplicates, thin notes, which sprint should
+be active) are flagged in the file, never silently resolved — that's
+`pauta-refine`'s job, run separately afterward.
 `pauta-scratchpad-import` is for unstructured prose with no fixed shape — notes
 jotted for your own future reference, not an existing plan. `pauta-refine` doesn't
 file or move anything itself; `pauta-add-issue` and `pauta-scratchpad-import` both
@@ -220,10 +229,10 @@ npx pauta install-skills    # copy the Claude Code skill files into .claude/skil
 
 `install-skills` is mechanical (no LLM) — it copies every skill directory
 (`pauta-add-issue`, `pauta-reorganize`, `pauta-suggest-batches`, `pauta-bootstrap`,
-`pauta-scratchpad-import`, `pauta-refine`) from the installed package's own
-`skills/` directory into the project's `.claude/skills/`, overwriting on re-run.
-Once installed, the skills themselves enforce the one rule: read via
-`pauta show --json`, write only via `pauta` commands, never touch
+`pauta-migrate`, `pauta-scratchpad-import`, `pauta-refine`) from the installed
+package's own `skills/` directory into the project's `.claude/skills/`,
+overwriting on re-run. Once installed, the skills themselves enforce the one
+rule: read via `pauta show --json`, write only via `pauta` commands, never touch
 `docs/roadmap/*` directly.
 
 **Existing project:** `init`, then `install-skills`, then either add issues by hand
@@ -232,13 +241,14 @@ to run the `pauta-bootstrap` skill to seed a starting plan from your existing co
 **New project:** same — `init`, `install-skills`, then `pauta-bootstrap` from
 whatever docs exist (or start empty and add issues as ideas come up).
 
-**Already have a hand-rolled backlog at `docs/roadmap/`?** (e.g. a legacy
-`ROADMAP.md`/`sprints.md`/`TODO.md` setup) `init` refuses to run if that directory
-contains anything other than pauta's own files (`issues.jsonl`, `sprints.json`,
-`specs/`), to avoid mixing ownership. Move the legacy directory out of the way
-first — `git mv docs/roadmap docs/roadmap-legacy` — then run `init` again; pauta's
-`docs/roadmap/` starts clean and the old content is still there to port over at
-leisure.
+**Already have a hand-rolled backlog?** (a legacy `ROADMAP.md`/`docs/sprints.md`/
+`TODO.md` setup, possibly living at `docs/roadmap/` itself) Run `install-skills`
+and ask the agent to bootstrap — `pauta-bootstrap` detects the legacy doc and hands
+off to `pauta-migrate`, which handles the `docs/roadmap/` rename
+(`git mv docs/roadmap docs/roadmap-legacy` — required before `init`, since `init`
+refuses to run if that directory contains anything other than pauta's own files)
+and writes a reviewable mapping artifact before filing anything. See "Smart ops"
+above for what `pauta-migrate` does and doesn't decide on its own.
 
 `init`, the CLI, and `install-skills` are all mechanical (no LLM); only the
 `pauta-suggest-batches` and `pauta-bootstrap` skills read content and cost tokens.

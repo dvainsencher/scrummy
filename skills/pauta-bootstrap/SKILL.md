@@ -1,6 +1,6 @@
 ---
 name: pauta-bootstrap
-description: This skill should be used right after `pauta init` on a project that has no backlog issues yet, to seed an initial plan — phrases like "bootstrap the roadmap", "set up an initial backlog from this codebase", "start the plan from what we have", or "this project is brand new, help me seed the backlog".
+description: This skill should be used right after `pauta init` on a project that has no backlog issues yet, to seed an initial plan — phrases like "bootstrap the roadmap", "set up an initial backlog from this codebase", "start the plan from what we have", "this project is brand new, help me seed the backlog", "migrate my old backlog into pauta", or "port this ROADMAP.md/TODO.md".
 ---
 
 # pauta: bootstrap
@@ -11,15 +11,29 @@ read the plan via `pauta show --json` and you write to it only by calling `pauta
 commands — never by editing `docs/roadmap/issues.jsonl`, `docs/roadmap/sprints.json`,
 or `docs/roadmap/specs/*.md` directly.
 
-This skill seeds the *first* plan for a project. It covers two cases — tell which
+This skill seeds the *first* plan for a project. It covers three cases — tell which
 one you're in before reading further:
 
-- **Existing codebase**: there's code to read, not just intent.
+- **Migrating an existing backlog**: the project already tracks work in a
+  hand-rolled doc — `ROADMAP.md`, `docs/sprints.md`, a non-numeric
+  `docs/roadmap/*.md`, `TODO.md`, or similar. This isn't "inspiration for a
+  curated subset" — it's a full-fidelity port. See step 0 below; this case hands
+  off to `pauta-migrate` instead of following the rest of this skill.
+- **Existing codebase**: there's code to read, not just intent, and no
+  pre-existing backlog doc.
 - **Greenfield**: no code yet, or docs-only — there's nothing to scan beyond
   whatever design docs/READMEs already exist.
 
 ## Steps
 
+0. **Check for a legacy backlog doc before anything else** — `ROADMAP.md`,
+   `docs/sprints.md`, a `docs/roadmap/*.md` that isn't pauta's own
+   `issues.jsonl`/`sprints.json`/`specs/`, `TODO.md`, or similar. If you find one,
+   stop following these steps and follow `pauta-migrate`'s `SKILL.md` instead —
+   it handles the `docs/roadmap/` rename-first step (required before `pauta init`
+   if the legacy doc lives there) and the rest of the migration. Don't run
+   `pauta init` yourself first in this case; `pauta-migrate` does it after the
+   rename.
 1. Run `pauta show --json` first regardless of case — if it already has issues or
    sprints, this isn't a bootstrap anymore; stop and suggest `pauta-suggest-batches`
    or `pauta-add-issue` instead.
