@@ -233,10 +233,11 @@ whatever docs exist (or start empty and add issues as ideas come up).
 
 **Already have a hand-rolled backlog at `docs/roadmap/`?** (e.g. a legacy
 `ROADMAP.md`/`sprints.md`/`TODO.md` setup) `init` refuses to run if that directory
-exists without a pauta-managed `issues.jsonl`, to avoid mixing ownership. Move the
-legacy directory out of the way first — `git mv docs/roadmap docs/roadmap-legacy` —
-then run `init` again; pauta's `docs/roadmap/` starts clean and the old content is
-still there to port over at leisure.
+contains anything other than pauta's own files (`issues.jsonl`, `sprints.json`,
+`specs/`), to avoid mixing ownership. Move the legacy directory out of the way
+first — `git mv docs/roadmap docs/roadmap-legacy` — then run `init` again; pauta's
+`docs/roadmap/` starts clean and the old content is still there to port over at
+leisure.
 
 `init`, the CLI, and `install-skills` are all mechanical (no LLM); only the
 `pauta-suggest-batches` and `pauta-bootstrap` skills read content and cost tokens.

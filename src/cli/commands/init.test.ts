@@ -48,4 +48,11 @@ describe("init", () => {
     expect(() => init(cwd)).toThrow(/docs\/roadmap-legacy/);
     expect(fs.existsSync(issuesFilePath(cwd))).toBe(false);
   });
+
+  it("recovers from an init interrupted after specsDir was created but before issues.jsonl was written", () => {
+    fs.mkdirSync(specsDir(cwd), { recursive: true });
+    expect(() => init(cwd)).not.toThrow();
+    expect(fs.existsSync(issuesFilePath(cwd))).toBe(true);
+    expect(readIssues(cwd)).toEqual([]);
+  });
 });

@@ -122,27 +122,27 @@ describe("assertRoadmapDirNotForeign", () => {
 
   it("does not throw when the directory does not exist yet", () => {
     const roadmapDir = path.join(dir, "docs", "roadmap");
-    expect(() =>
-      assertRoadmapDirNotForeign(roadmapDir, path.join(roadmapDir, "issues.jsonl")),
-    ).not.toThrow();
+    expect(() => assertRoadmapDirNotForeign(roadmapDir)).not.toThrow();
   });
 
   it("does not throw when the directory is empty", () => {
-    fs.mkdirSync(dir, { recursive: true });
-    expect(() =>
-      assertRoadmapDirNotForeign(dir, path.join(dir, "issues.jsonl")),
-    ).not.toThrow();
+    expect(() => assertRoadmapDirNotForeign(dir)).not.toThrow();
   });
 
-  it("does not throw when issues.jsonl already exists (pauta-managed)", () => {
+  it("does not throw when only pauta-owned entries exist (issues.jsonl, sprints.json, specs)", () => {
     fs.writeFileSync(path.join(dir, "issues.jsonl"), "");
-    expect(() => assertRoadmapDirNotForeign(dir, path.join(dir, "issues.jsonl"))).not.toThrow();
+    fs.writeFileSync(path.join(dir, "sprints.json"), "[]\n");
+    fs.mkdirSync(path.join(dir, "specs"));
+    expect(() => assertRoadmapDirNotForeign(dir)).not.toThrow();
   });
 
-  it("throws when the directory has foreign content and no issues.jsonl", () => {
+  it("does not throw when only a partial pauta init left specs/ behind (no issues.jsonl yet)", () => {
+    fs.mkdirSync(path.join(dir, "specs"));
+    expect(() => assertRoadmapDirNotForeign(dir)).not.toThrow();
+  });
+
+  it("throws when the directory has foreign content", () => {
     fs.writeFileSync(path.join(dir, "ROADMAP.md"), "# legacy backlog\n");
-    expect(() => assertRoadmapDirNotForeign(dir, path.join(dir, "issues.jsonl"))).toThrow(
-      /docs\/roadmap-legacy/,
-    );
+    expect(() => assertRoadmapDirNotForeign(dir)).toThrow(/docs\/roadmap-legacy/);
   });
 });

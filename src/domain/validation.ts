@@ -47,13 +47,18 @@ export function assertDirectoryExists(dirPath: string, label: string): void {
   }
 }
 
-export function assertRoadmapDirNotForeign(roadmapDir: string, issuesFilePath: string): void {
-  if (!existsSync(roadmapDir) || existsSync(issuesFilePath)) {
+const PAUTA_OWNED_ROADMAP_ENTRIES = new Set(["issues.jsonl", "sprints.json", "specs"]);
+
+export function assertRoadmapDirNotForeign(roadmapDir: string): void {
+  if (!existsSync(roadmapDir)) {
     return;
   }
-  if (readdirSync(roadmapDir).length > 0) {
+  const foreignEntries = readdirSync(roadmapDir).filter(
+    (entry) => !entry.startsWith(".") && !PAUTA_OWNED_ROADMAP_ENTRIES.has(entry),
+  );
+  if (foreignEntries.length > 0) {
     throw new Error(
-      `"${roadmapDir}" already exists and isn't a pauta-managed directory (no issues.jsonl found). ` +
+      `"${roadmapDir}" already exists and contains non-pauta content (${foreignEntries.join(", ")}). ` +
         `Move it out of the way first, e.g. "git mv docs/roadmap docs/roadmap-legacy", then run init again.`,
     );
   }
