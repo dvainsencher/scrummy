@@ -106,6 +106,7 @@ pauta init                                 # scaffold docs/roadmap/ in a project
 pauta add-issue "<title>" [--status idea|ready] [--sprint <name>]   # prints new id
 pauta edit-issue <id> [--title "..."] [--status ...]
 pauta remove-issue <id>
+pauta import <file>                        # batch-add issues from a JSON array of {title, status?, sprint?}; prints new ids, one per line
 pauta move <id> <sprint-name>              # assign to a sprint
 pauta move <id> --backlog                  # send back to the inbox
 pauta set-status <id> <status>

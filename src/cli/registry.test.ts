@@ -74,6 +74,15 @@ describe("command registry", () => {
     expect(JSON.parse(result).backlog[0].title).toBe("Dark mode");
   });
 
+  it("import reads a JSON file of issues and returns the new ids", () => {
+    commands.init(cwd, []);
+    const filePath = path.join(cwd, "import.json");
+    fs.writeFileSync(filePath, JSON.stringify([{ title: "first" }, { title: "second" }]));
+    const result = commands.import(cwd, [filePath]);
+    expect(result).toBe("1\n2");
+    expect(readIssues(cwd).map((issue) => issue.title)).toEqual(["first", "second"]);
+  });
+
   it("install-skills copies the shipped skills into .claude/skills/", () => {
     commands["install-skills"](cwd, []);
     expect(

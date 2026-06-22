@@ -2,6 +2,7 @@ import { addIssue } from "./commands/addIssue.js";
 import { createSprint } from "./commands/createSprint.js";
 import { editIssue } from "./commands/editIssue.js";
 import { editSprint } from "./commands/editSprint.js";
+import { importFromFile } from "./commands/import.js";
 import { init } from "./commands/init.js";
 import { move, moveToBacklog } from "./commands/move.js";
 import { removeIssue } from "./commands/removeIssue.js";
@@ -39,6 +40,13 @@ export const commands: Record<string, CommandHandler> = {
       title: parsed.flags.title as string | undefined,
       status: parsed.flags.status as string | undefined,
     });
+  },
+
+  import: (cwd, args) => {
+    const parsed = parseArgs(args);
+    const filePath = requirePositional(parsed, 0, "file");
+    const ids = importFromFile(cwd, filePath);
+    return ids.join("\n");
   },
 
   "remove-issue": (cwd, args) => {
