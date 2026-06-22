@@ -62,7 +62,12 @@ at once, which is exactly the mistake this skill exists to prevent.
 1. Determine scope: the issues `pauta-migrate` just created (if the
    `docs/roadmap-legacy/_migration-plan.md` artifact is still present, its rows
    tell you which ones those are), a named sprint, or an explicit set the user
-   gives you. Run `pauta show --json --done` to read them.
+   gives you. Run `pauta show --json` to read them — this excludes `done`
+   issues by default, and that's deliberate: refining completed historical
+   work is low value (it doesn't change what gets worked on next) and risks
+   erasing the record of what actually shipped. Only include `done` issues in
+   scope if the user explicitly asks to review/clean up completed or
+   historical items — in that case, and only that case, use `--done`.
 2. **Before reviewing anything, ask the user how they want findings presented:**
    one at a time (review and decide each before seeing the next) or as one
    batched list (see everything, then decide in bulk). Don't default to either
@@ -70,7 +75,11 @@ at once, which is exactly the mistake this skill exists to prevent.
 3. Apply the Checks above to every issue in scope. For consistency/duplicate
    detection, compare each issue against the rest of the set *and* against
    issues outside it — a migrated item can duplicate something that already
-   existed before the migration, not just another migrated item.
+   existed before the migration, not just another migrated item. For this
+   comparison only, fetch the broader set with `pauta show --json --done` so a
+   migrated/active item that duplicates already-shipped work is still
+   flagged — but a `done` issue is never itself a *target* of a finding or
+   edit, only something to check new items against.
 4. Present findings per the user's chosen mode from step 2:
    - **One at a time**: show one finding with its proposed action (tighter
      title, which spec section is empty, or — for a likely duplicate — merge
