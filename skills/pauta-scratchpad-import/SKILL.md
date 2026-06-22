@@ -28,13 +28,16 @@ author's own future reference, not as a backlog.
 3. For each candidate idea, run `pauta-refine`'s checks (definition clarity,
    consistency against `pauta show --json`, spec quality if you're about to create
    one) before filing. If a note is too thin to file confidently — a fragment, a
-   half-sentence, no clear scope — ask the user one calibrating question (what
-   problem it's solving, or what done looks like) rather than inventing detail; a
-   plain chat question is fine if no structured question UI is available. If
-   `pauta-refine` flags the note as a likely duplicate of an existing issue, don't
-   file it — tell the user which issue it overlaps with and ask whether to skip it,
-   merge the note into that issue's spec instead, or file it anyway as a separate
-   issue.
+   half-sentence, no clear scope — don't file it as a vague idea by default.
+   Offer the user a choice: **refine now** (ask one calibrating question — what
+   problem it's solving, or what done looks like — and use the answer to sharpen
+   the idea before filing), **file as-is** (accept the vagueness and file it
+   anyway, e.g. for a placeholder), or **skip it**. Default to refining now unless
+   the user says otherwise; a plain chat question is fine if no structured
+   question UI is available. If `pauta-refine` flags the note as a likely
+   duplicate of an existing issue, don't file it — tell the user which issue it
+   overlaps with and ask whether to skip it, merge the note into that issue's spec
+   instead, or file it anyway as a separate issue.
 4. Once a candidate is clear enough (directly, or after the user's answer):
    - `pauta add-issue "<title>" [--status idea|ready]` — leave unset (backlog)
      unless the note clearly ties to an existing sprint by name.
