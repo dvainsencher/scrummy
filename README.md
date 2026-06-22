@@ -169,6 +169,7 @@ type.
 pauta-suggest-batches        # skill: reads the backlog, proposes sprint groupings; you confirm
 pauta-bootstrap              # skill: reads repo code + docs, proposes an initial set of issues/sprints
 pauta-migrate                # skill: full-fidelity port of an existing hand-rolled backlog doc, via a reviewable file artifact
+pauta-audit                  # skill: read-only fidelity check of a completed migration against its approved artifact
 pauta-scratchpad-import      # skill: reads a messy notes file, files one issue per idea; you confirm
 pauta-refine                 # skill: checks a candidate or existing issue for clarity/consistency/spec quality
 ```
@@ -181,7 +182,12 @@ it writes a markdown mapping table to `docs/roadmap-legacy/_migration-plan.md` f
 you to read and edit directly, and executes only the (possibly edited) file once
 you approve it; ambiguities (possible duplicates, thin notes, which sprint should
 be active) are flagged in the file, never silently resolved — that's
-`pauta-refine`'s job, run separately afterward.
+`pauta-refine`'s job, run separately afterward. `pauta-audit` is the third leg of
+the same migration flow: run it after `pauta-migrate` to mechanically reconcile
+the resulting backlog against the approved artifact (every row produced an issue,
+counts match, nothing silently dropped) — a different question from "is this
+backlog any good," which is `pauta-refine`'s. `migrate`/`audit`/`refine` are three
+separate, explicitly-invoked actions on purpose, never bundled into one step.
 `pauta-scratchpad-import` is for unstructured prose with no fixed shape — notes
 jotted for your own future reference, not an existing plan. `pauta-refine` doesn't
 file or move anything itself; `pauta-add-issue` and `pauta-scratchpad-import` both
@@ -229,7 +235,7 @@ npx pauta install-skills    # copy the Claude Code skill files into .claude/skil
 
 `install-skills` is mechanical (no LLM) — it copies every skill directory
 (`pauta-add-issue`, `pauta-reorganize`, `pauta-suggest-batches`, `pauta-bootstrap`,
-`pauta-migrate`, `pauta-scratchpad-import`, `pauta-refine`) from the installed
+`pauta-migrate`, `pauta-audit`, `pauta-scratchpad-import`, `pauta-refine`) from the installed
 package's own `skills/` directory into the project's `.claude/skills/`,
 overwriting on re-run. Once installed, the skills themselves enforce the one
 rule: read via `pauta show --json`, write only via `pauta` commands, never touch
