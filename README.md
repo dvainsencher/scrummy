@@ -100,6 +100,9 @@ docs/roadmap/
 
 ## Command surface
 
+`pauta` (bare) or `pauta --help` prints this command list with one-line
+descriptions; an unknown command prints an error hinting at `--help`.
+
 ### Writers (mechanical · zero tokens · the only mutators)
 
 ```

@@ -154,3 +154,24 @@ export const commands: Record<string, CommandHandler> = {
     return installed.join("\n");
   },
 };
+
+export const commandDescriptions: Record<string, string> = {
+  init: "Scaffold docs/roadmap/ in a project",
+  "add-issue": "Add an issue to the backlog",
+  "edit-issue": "Edit an issue's title or status",
+  import: "Batch-import issues from a JSON file",
+  "remove-issue": "Remove an issue",
+  "create-sprint": "Create a new sprint",
+  "edit-sprint": "Edit a sprint's goal or notes",
+  "remove-sprint": "Remove an empty sprint",
+  move: "Move an issue to a sprint, or back to the backlog with --backlog",
+  "set-status": "Set an issue's status",
+  "set-sprint-status": "Set a sprint's status",
+  "set-active": "Mark a sprint as the active one",
+  "set-position": "Set a sprint's advisory sort position",
+  spec: "Create or return an issue's spec file path",
+  "log-issue": "Append a progress log entry to an issue",
+  "show-log": "Show an issue's progress log",
+  show: "Show the backlog and sprints",
+  "install-skills": "Install pauta's Claude Code skills into this project",
+};
