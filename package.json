@@ -7,6 +7,9 @@
     "scrummy": "./dist/bin/scrummy.js"
   },
   "main": "./dist/index.js",
+  "files": [
+    "dist/"
+  ],
   "scripts": {
     "prepare": "npm run build",
     "build": "tsc -p tsconfig.json && chmod +x dist/bin/scrummy.js",
