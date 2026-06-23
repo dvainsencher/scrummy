@@ -7,7 +7,7 @@ description: This skill should be used to check whether a candidate or existing 
 
 This project tracks work with `pauta`, a flat-file backlog/sprint manager. The one
 rule that matters: **the `pauta` CLI is the only writer to `docs/roadmap/*`.** You
-read the plan via `pauta show --json` and you write to it only by calling `pauta`
+read the plan via `npx pauta show --json` and you write to it only by calling `pauta`
 commands — never by editing `docs/roadmap/issues.jsonl`, `docs/roadmap/sprints.json`,
 or `docs/roadmap/specs/*.md` directly (spec *content* is the exception — see
 `pauta-add-issue`).
@@ -30,12 +30,12 @@ For the issue (and its spec, if it has one) under review, apply:
    generic? Trips on short titles (under ~4 words with no further context) or
    generic vague-verb patterns ("fix X", "improve Y", "update Z") that don't say
    *what* is broken or *what* "improved" means.
-2. **Consistency** — run `pauta show --json` and check whether this duplicates or
+2. **Consistency** — run `npx pauta show --json` and check whether this duplicates or
    contradicts an existing issue (same feature area, overlapping scope, or a title
    that reads as a rephrasing of one already on the backlog).
 3. **Spec quality** — if a spec exists at `specs/<id>.md`, are Problem/Approach/
    Acceptance criteria/Open questions actually filled in, or still the empty
-   skeleton headers left by `pauta spec <id>`?
+   skeleton headers left by `npx pauta spec <id>`?
 
 ## Steps (single issue, or called as a helper)
 
@@ -62,7 +62,7 @@ at once, which is exactly the mistake this skill exists to prevent.
 1. Determine scope: the issues `pauta-migrate` just created (if the
    `docs/roadmap-legacy/_migration-plan.md` artifact is still present, its rows
    tell you which ones those are), a named sprint, or an explicit set the user
-   gives you. Run `pauta show --json` to read them — this excludes `done`
+   gives you. Run `npx pauta show --json` to read them — this excludes `done`
    issues by default, and that's deliberate: refining completed historical
    work is low value (it doesn't change what gets worked on next) and risks
    erasing the record of what actually shipped. Only include `done` issues in
@@ -76,7 +76,7 @@ at once, which is exactly the mistake this skill exists to prevent.
    detection, compare each issue against the rest of the set *and* against
    issues outside it — a migrated item can duplicate something that already
    existed before the migration, not just another migrated item. For this
-   comparison only, fetch the broader set with `pauta show --json --done` so a
+   comparison only, fetch the broader set with `npx pauta show --json --done` so a
    migrated/active item that duplicates already-shipped work is still
    flagged — but a `done` issue is never itself a *target* of a finding or
    edit, only something to check new items against.
@@ -90,10 +90,10 @@ at once, which is exactly the mistake this skill exists to prevent.
      reply).
 5. Execute only the decisions the user actually approved, via `pauta` commands
    — never the ones left undecided or explicitly declined:
-   - Title fix: `pauta edit-issue <id> --title "..."`.
-   - Merge duplicate `<dup-id>` into survivor `<id>`: run `pauta spec <id>` to
+   - Title fix: `npx pauta edit-issue <id> --title "..."`.
+   - Merge duplicate `<dup-id>` into survivor `<id>`: run `npx pauta spec <id>` to
      ensure the survivor has a spec file, write the duplicate's relevant content
-     into it with normal file-editing tools, then `pauta remove-issue <dup-id>`
+     into it with normal file-editing tools, then `npx pauta remove-issue <dup-id>`
      (this also deletes the duplicate's own spec file).
    - Thin spec: write the missing section(s) into `specs/<id>.md` directly
      (spec content is the documented exception to the CLI-only-writer rule).

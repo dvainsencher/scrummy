@@ -7,7 +7,7 @@ description: This skill should be used when the user has a messy notes/scratchpa
 
 This project tracks work with `pauta`, a flat-file backlog/sprint manager. The one
 rule that matters: **the `pauta` CLI is the only writer to `docs/roadmap/*`.** You
-read the plan via `pauta show --json` and you write to it only by calling `pauta`
+read the plan via `npx pauta show --json` and you write to it only by calling `pauta`
 commands — never by editing `docs/roadmap/issues.jsonl`, `docs/roadmap/sprints.json`,
 or `docs/roadmap/specs/*.md` directly, even though they're plain files you technically
 could open. (Spec *content* is the documented exception — see step 4.)
@@ -26,7 +26,7 @@ author's own future reference, not as a backlog.
    unrelated thoughts into one. If a section is genuinely ambiguous (could be one
    idea or several), ask the user rather than guessing.
 3. For each candidate idea, run `pauta-refine`'s checks (definition clarity,
-   consistency against `pauta show --json`, spec quality if you're about to create
+   consistency against `npx pauta show --json`, spec quality if you're about to create
    one) before filing. If a note is too thin to file confidently — a fragment, a
    half-sentence, no clear scope — don't file it as a vague idea by default.
    Offer the user a choice: **refine now** (ask one calibrating question — what
@@ -39,10 +39,10 @@ author's own future reference, not as a backlog.
    overlaps with and ask whether to skip it, merge the note into that issue's spec
    instead, or file it anyway as a separate issue.
 4. Once a candidate is clear enough (directly, or after the user's answer):
-   - `pauta add-issue "<title>" [--status idea|ready]` — leave unset (backlog)
+   - `npx pauta add-issue "<title>" [--status idea|ready]` — leave unset (backlog)
      unless the note clearly ties to an existing sprint by name.
    - If the note has enough detail to be more than a one-liner, run
-     `pauta spec <id>` to create `specs/<id>.md`, then write the note's detail into
+     `npx pauta spec <id>` to create `specs/<id>.md`, then write the note's detail into
      that file with normal file-editing tools (spec content isn't roadmap
      metadata — only its creation goes through the CLI).
 5. **Don't execute silently** — for anything beyond a single obvious idea, list
