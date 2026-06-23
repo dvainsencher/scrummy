@@ -29,6 +29,12 @@ describe("logProgress", () => {
     expect(entries[0].createdAt).toBeTruthy();
   });
 
+  it("returns a confirmation message", () => {
+    expect(logProgress(cwd, id, "plan", "investigate root cause")).toBe(
+      `Logged plan entry for issue #${id}`,
+    );
+  });
+
   it("throws for a nonexistent issue", () => {
     expect(() => logProgress(cwd, 999, "plan", "x")).toThrow(/999/);
   });

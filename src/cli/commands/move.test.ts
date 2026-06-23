@@ -28,6 +28,15 @@ describe("move", () => {
     expect(readIssues(cwd)[0].sprint).toBe("foundation");
   });
 
+  it("returns a confirmation message", () => {
+    expect(move(cwd, id, "foundation")).toBe(`Moved issue #${id} to sprint "foundation"`);
+  });
+
+  it("returns a confirmation message for moveToBacklog", () => {
+    move(cwd, id, "foundation");
+    expect(moveToBacklog(cwd, id)).toBe(`Moved issue #${id} to backlog`);
+  });
+
   it("rejects a sprint that does not exist", () => {
     expect(() => move(cwd, id, "missing")).toThrow(/missing/);
   });

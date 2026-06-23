@@ -22,9 +22,7 @@ import { parseArgs, requireIntPositional, requirePositional } from "./parse.js";
 export type CommandHandler = (cwd: string, args: string[]) => string | void;
 
 export const commands: Record<string, CommandHandler> = {
-  init: (cwd) => {
-    init(cwd);
-  },
+  init: (cwd) => init(cwd),
 
   "add-issue": (cwd, args) => {
     const parsed = parseArgs(args);
@@ -39,7 +37,7 @@ export const commands: Record<string, CommandHandler> = {
   "edit-issue": (cwd, args) => {
     const parsed = parseArgs(args);
     const id = requireIntPositional(parsed, 0, "id");
-    editIssue(cwd, id, {
+    return editIssue(cwd, id, {
       title: parsed.flags.title as string | undefined,
       status: parsed.flags.status as string | undefined,
     });
@@ -55,13 +53,13 @@ export const commands: Record<string, CommandHandler> = {
   "remove-issue": (cwd, args) => {
     const parsed = parseArgs(args);
     const id = requireIntPositional(parsed, 0, "id");
-    removeIssue(cwd, id);
+    return removeIssue(cwd, id);
   },
 
   "create-sprint": (cwd, args) => {
     const parsed = parseArgs(args);
     const name = requirePositional(parsed, 0, "name");
-    createSprint(cwd, name, {
+    return createSprint(cwd, name, {
       goal: (parsed.flags.goal as string | undefined) ?? "",
       notes: parsed.flags.notes as string | undefined,
       position: parsed.flags.position !== undefined ? Number(parsed.flags.position) : undefined,
@@ -71,7 +69,7 @@ export const commands: Record<string, CommandHandler> = {
   "edit-sprint": (cwd, args) => {
     const parsed = parseArgs(args);
     const name = requirePositional(parsed, 0, "name");
-    editSprint(cwd, name, {
+    return editSprint(cwd, name, {
       goal: parsed.flags.goal as string | undefined,
       notes: parsed.flags.notes as string | undefined,
     });
@@ -80,45 +78,44 @@ export const commands: Record<string, CommandHandler> = {
   "remove-sprint": (cwd, args) => {
     const parsed = parseArgs(args);
     const name = requirePositional(parsed, 0, "name");
-    removeSprint(cwd, name);
+    return removeSprint(cwd, name);
   },
 
   move: (cwd, args) => {
     const parsed = parseArgs(args);
     const id = requireIntPositional(parsed, 0, "id");
     if (parsed.flags.backlog) {
-      moveToBacklog(cwd, id);
-      return;
+      return moveToBacklog(cwd, id);
     }
     const sprintName = requirePositional(parsed, 1, "sprint-name");
-    move(cwd, id, sprintName);
+    return move(cwd, id, sprintName);
   },
 
   "set-status": (cwd, args) => {
     const parsed = parseArgs(args);
     const id = requireIntPositional(parsed, 0, "id");
     const status = requirePositional(parsed, 1, "status");
-    setStatus(cwd, id, status);
+    return setStatus(cwd, id, status);
   },
 
   "set-sprint-status": (cwd, args) => {
     const parsed = parseArgs(args);
     const name = requirePositional(parsed, 0, "name");
     const status = requirePositional(parsed, 1, "status");
-    setSprintStatus(cwd, name, status);
+    return setSprintStatus(cwd, name, status);
   },
 
   "set-active": (cwd, args) => {
     const parsed = parseArgs(args);
     const name = requirePositional(parsed, 0, "name");
-    setActive(cwd, name);
+    return setActive(cwd, name);
   },
 
   "set-position": (cwd, args) => {
     const parsed = parseArgs(args);
     const name = requirePositional(parsed, 0, "name");
     const position = requireIntPositional(parsed, 1, "position");
-    setPosition(cwd, name, position);
+    return setPosition(cwd, name, position);
   },
 
   spec: (cwd, args) => {
@@ -134,7 +131,7 @@ export const commands: Record<string, CommandHandler> = {
     if (parsed.flags.type === undefined || parsed.flags.type === true) {
       throw new Error("Missing required flag: --type");
     }
-    logProgress(cwd, id, parsed.flags.type, message);
+    return logProgress(cwd, id, parsed.flags.type, message);
   },
 
   "show-log": (cwd, args) => {

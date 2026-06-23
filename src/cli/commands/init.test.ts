@@ -24,6 +24,10 @@ describe("init", () => {
     expect(readIssues(cwd)).toEqual([]);
   });
 
+  it("returns a confirmation message", () => {
+    expect(init(cwd)).toBe("Initialized docs/roadmap/");
+  });
+
   it("creates an empty sprints.json ([])", () => {
     init(cwd);
     expect(fs.existsSync(sprintsFilePath(cwd))).toBe(true);

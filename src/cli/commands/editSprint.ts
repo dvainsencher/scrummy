@@ -6,7 +6,7 @@ export interface EditSprintOptions {
   notes?: string;
 }
 
-export function editSprint(cwd: string, name: string, options: EditSprintOptions): void {
+export function editSprint(cwd: string, name: string, options: EditSprintOptions): string {
   const sprints = readSprints(cwd);
   assertSprintExists(sprints, name);
 
@@ -21,4 +21,5 @@ export function editSprint(cwd: string, name: string, options: EditSprintOptions
   );
 
   writeSprints(cwd, updated);
+  return `Updated sprint "${name}"`;
 }

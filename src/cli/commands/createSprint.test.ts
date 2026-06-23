@@ -29,6 +29,10 @@ describe("createSprint", () => {
     });
   });
 
+  it("returns a confirmation message", () => {
+    expect(createSprint(cwd, "foundation", { goal: "g1" })).toBe('Created sprint "foundation"');
+  });
+
   it("defaults position to 10 past the highest existing position", () => {
     createSprint(cwd, "foundation", { goal: "g1" });
     createSprint(cwd, "the-reader", { goal: "g2" });

@@ -26,6 +26,10 @@ describe("setPosition", () => {
     expect(readSprints(cwd).find((s) => s.name === "foundation")?.position).toBe(5);
   });
 
+  it("returns a confirmation message", () => {
+    expect(setPosition(cwd, "foundation", 5)).toBe('Set sprint "foundation" position to 5');
+  });
+
   it("does not renumber other sprints", () => {
     setPosition(cwd, "foundation", 5);
     expect(readSprints(cwd).find((s) => s.name === "the-reader")?.position).toBe(20);

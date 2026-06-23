@@ -3,7 +3,7 @@ import { assertIssueExists } from "../../domain/validation.js";
 import { specFilePath } from "../../storage/paths.js";
 import { readIssues, writeIssues } from "../../storage/issuesStore.js";
 
-export function removeIssue(cwd: string, id: number): void {
+export function removeIssue(cwd: string, id: number): string {
   const issues = readIssues(cwd);
   assertIssueExists(issues, id);
 
@@ -13,4 +13,5 @@ export function removeIssue(cwd: string, id: number): void {
   if (fs.existsSync(specPath)) {
     fs.rmSync(specPath);
   }
+  return `Removed issue #${id}`;
 }

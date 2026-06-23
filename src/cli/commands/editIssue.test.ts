@@ -26,6 +26,10 @@ describe("editIssue", () => {
     expect(readIssues(cwd)[0].title).toBe("Light mode");
   });
 
+  it("returns a confirmation message", () => {
+    expect(editIssue(cwd, id, { title: "Light mode" })).toBe(`Updated issue #${id}`);
+  });
+
   it("updates the status", () => {
     editIssue(cwd, id, { status: "doing" });
     expect(readIssues(cwd)[0].status).toBe("doing");

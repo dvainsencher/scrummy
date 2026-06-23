@@ -27,6 +27,10 @@ describe("removeIssue", () => {
     expect(readIssues(cwd)).toEqual([]);
   });
 
+  it("returns a confirmation message", () => {
+    expect(removeIssue(cwd, id)).toBe(`Removed issue #${id}`);
+  });
+
   it("deletes the spec file if one exists", () => {
     fs.mkdirSync(specsDir(cwd), { recursive: true });
     fs.writeFileSync(specFilePath(cwd, id), "# Dark mode\n");
