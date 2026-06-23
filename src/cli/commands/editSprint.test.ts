@@ -25,6 +25,12 @@ describe("editSprint", () => {
     expect(readSprints(cwd)[0].goal).toBe("new goal");
   });
 
+  it("returns a confirmation message", () => {
+    expect(editSprint(cwd, "foundation", { goal: "new goal" })).toBe(
+      'Updated sprint "foundation"',
+    );
+  });
+
   it("updates notes", () => {
     editSprint(cwd, "foundation", { notes: "new notes" });
     expect(readSprints(cwd)[0].notes).toBe("new notes");

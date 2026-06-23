@@ -26,6 +26,10 @@ describe("setStatus", () => {
     expect(readIssues(cwd)[0].status).toBe("doing");
   });
 
+  it("returns a confirmation message", () => {
+    expect(setStatus(cwd, id, "doing")).toBe(`Set issue #${id} status to "doing"`);
+  });
+
   it("allows jumping straight to done, unenforced transitions", () => {
     setStatus(cwd, id, "done");
     expect(readIssues(cwd)[0].status).toBe("done");

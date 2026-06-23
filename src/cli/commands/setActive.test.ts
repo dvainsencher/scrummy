@@ -27,6 +27,10 @@ describe("setActive", () => {
     expect(foundation?.status).toBe("active");
   });
 
+  it("returns a confirmation message", () => {
+    expect(setActive(cwd, "foundation")).toBe('Activated sprint "foundation"');
+  });
+
   it("demotes a previously active sprint back to planned", () => {
     setActive(cwd, "foundation");
     setActive(cwd, "the-reader");

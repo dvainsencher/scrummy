@@ -25,6 +25,12 @@ describe("setSprintStatus", () => {
     expect(readSprints(cwd)[0].status).toBe("done");
   });
 
+  it("returns a confirmation message", () => {
+    expect(setSprintStatus(cwd, "foundation", "done")).toBe(
+      'Set sprint "foundation" status to "done"',
+    );
+  });
+
   it("throws for a nonexistent sprint", () => {
     expect(() => setSprintStatus(cwd, "missing", "done")).toThrow(/missing/);
   });

@@ -8,7 +8,7 @@ export interface CreateSprintOptions {
   position?: number;
 }
 
-export function createSprint(cwd: string, name: string, options: CreateSprintOptions): void {
+export function createSprint(cwd: string, name: string, options: CreateSprintOptions): string {
   const sprints = readSprints(cwd);
   assertSprintNameAvailable(sprints, name);
 
@@ -22,4 +22,5 @@ export function createSprint(cwd: string, name: string, options: CreateSprintOpt
   };
 
   writeSprints(cwd, [...sprints, sprint]);
+  return `Created sprint "${name}"`;
 }

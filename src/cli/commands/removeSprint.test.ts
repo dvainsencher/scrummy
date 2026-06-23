@@ -26,6 +26,11 @@ describe("removeSprint", () => {
     expect(readSprints(cwd)).toEqual([]);
   });
 
+  it("returns a confirmation message", () => {
+    createSprint(cwd, "other", { goal: "g" });
+    expect(removeSprint(cwd, "other")).toBe('Removed sprint "other"');
+  });
+
   it("throws for a nonexistent sprint", () => {
     expect(() => removeSprint(cwd, "missing")).toThrow(/missing/);
   });

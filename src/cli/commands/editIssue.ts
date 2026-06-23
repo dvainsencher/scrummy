@@ -7,7 +7,7 @@ export interface EditIssueOptions {
   status?: string;
 }
 
-export function editIssue(cwd: string, id: number, options: EditIssueOptions): void {
+export function editIssue(cwd: string, id: number, options: EditIssueOptions): string {
   const issues = readIssues(cwd);
   assertIssueExists(issues, id);
   if (options.status !== undefined) {
@@ -27,4 +27,5 @@ export function editIssue(cwd: string, id: number, options: EditIssueOptions): v
   );
 
   writeIssues(cwd, updated);
+  return `Updated issue #${id}`;
 }
