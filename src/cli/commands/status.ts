@@ -1,22 +1,18 @@
-import { readIssues } from "../../storage/issuesStore.js";
-import { readSprints } from "../../storage/sprintsStore.js";
+import { buildPlan } from "../../reader/plan.js";
 
 export function status(cwd: string): string {
-  const active = readSprints(cwd).find((sprint) => sprint.status === "active");
+  const plan = buildPlan(cwd, { done: true });
+  const active = plan.sprints.find((sprint) => sprint.active);
   if (!active) {
     return "no active sprint";
   }
 
-  const issues = readIssues(cwd)
-    .filter((issue) => issue.sprint === active.name)
-    .sort((a, b) => a.id - b.id);
-
-  const done = issues.filter((issue) => issue.status === "done").length;
-  const base = `${active.name} ${done}/${issues.length}`;
+  const done = active.issues.filter((issue) => issue.status === "done").length;
+  const base = `${active.name} ${done}/${active.issues.length}`;
 
   const current =
-    issues.find((issue) => issue.status === "doing") ??
-    issues.find((issue) => issue.status !== "done");
+    active.issues.find((issue) => issue.status === "doing") ??
+    active.issues.find((issue) => issue.status !== "done");
 
   return current ? `${base} → #${current.id} ${current.title}` : base;
 }
