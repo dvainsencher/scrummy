@@ -65,6 +65,13 @@ describe("main", () => {
     expect(exitCode).toBe(1);
     expect(stderr.join("")).toContain("999");
   });
+
+  it("exits 1 with an error when show receives a non-numeric id", () => {
+    run(["init"]);
+    const exitCode = run(["show", "foo"]);
+    expect(exitCode).toBe(1);
+    expect(stderr.join("")).toContain("foo");
+  });
 });
 
 describe("isEntryPoint", () => {

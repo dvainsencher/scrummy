@@ -33,7 +33,7 @@ function renderSprintHeader(sprint: SprintGroup): string {
   return `${marker}SPRINT ${sprint.name}   (${sprint.status})`;
 }
 
-function renderIssueLine(issue: IssueView): string {
+export function renderIssueLine(issue: IssueView): string {
   const specTag = issue.hasSpec ? "  [spec]" : "";
   const logTag = issue.hasLog ? "  [log]" : "";
   return `  #${issue.id}  ${issue.status.padEnd(5)} ${issue.title}${specTag}${logTag}`;

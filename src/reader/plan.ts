@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import type { Issue, Sprint } from "../domain/types.js";
-import { assertSprintExists } from "../domain/validation.js";
+import { assertIssueExists, assertSprintExists } from "../domain/validation.js";
 import { specFilePath } from "../storage/paths.js";
 import { readIssues } from "../storage/issuesStore.js";
 import { readProgress } from "../storage/progressStore.js";
@@ -26,6 +26,18 @@ export interface Plan {
 export interface BuildPlanOptions {
   sprint?: string;
   done?: boolean;
+}
+
+export function getIssue(cwd: string, id: number): IssueView {
+  const issues = readIssues(cwd);
+  assertIssueExists(issues, id);
+  const progress = readProgress(cwd);
+  const issue = issues.find((i) => i.id === id)!;
+  return {
+    ...issue,
+    hasSpec: fs.existsSync(specFilePath(cwd, issue.id)),
+    hasLog: progress.some((entry) => entry.issueId === issue.id),
+  };
 }
 
 export function buildPlan(cwd: string, options: BuildPlanOptions): Plan {
