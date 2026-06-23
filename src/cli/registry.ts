@@ -16,6 +16,7 @@ import { setStatus } from "./commands/setStatus.js";
 import { show } from "./commands/show.js";
 import { showLog } from "./commands/showLog.js";
 import { spec } from "./commands/spec.js";
+import { status } from "./commands/status.js";
 import { skillsSourceDir } from "../packageRoot.js";
 import { parseArgs, requireIntPositional, requirePositional } from "./parse.js";
 
@@ -162,6 +163,8 @@ export const commands: Record<string, CommandHandler> = {
     const installed = installSkills(cwd, skillsSourceDir());
     return installed.join("\n");
   },
+
+  status: (cwd) => status(cwd),
 };
 
 export const commandDescriptions: Record<string, string> = {
@@ -183,4 +186,5 @@ export const commandDescriptions: Record<string, string> = {
   "show-log": "Show an issue's progress log",
   show: "Show the backlog and sprints",
   "install-skills": "Install pauta's Claude Code skills into this project",
+  status: "Print a one-line summary of the active sprint",
 };

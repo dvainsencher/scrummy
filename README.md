@@ -142,6 +142,7 @@ sprint's issues and omits the backlog section.
 pauta show [--sprint <name>] [--done]      # the human-scannable whole plan
 pauta show --json                          # same content, structured, for the agent
 pauta show-log <id>                        # the progress-log entries for one issue, structured, for the agent
+pauta status                               # one-line summary of the active sprint, e.g. for a shell statusline
 ```
 
 Default `show` output:
