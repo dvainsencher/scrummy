@@ -319,4 +319,11 @@ backlog doc by hand, without running `pauta-migrate` at all.
 and `issue-quality` sprints are done — the whole mechanical layer, `show`/
 `show --json`, and the Claude Code skills (including `pauta-suggest-batches`,
 `pauta-bootstrap`, `pauta-scratchpad-import`, and `pauta-refine`) that drive it.
+
+A second pass of CLI polish is also done (#124–#128): all mutating commands now
+print a confirmation string on success, `pauta --help` and bare `pauta` print a
+command list, skill files use `npx pauta` so they work regardless of PATH, `pauta
+show <id>` renders a single issue, and sprint-name mismatches include a "Did you
+mean?" suggestion.
+
 See `SPRINTS.md` for the build plan and what's next.
