@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { commandDescriptions, commands } from "./registry.js";
 import { buildUsageText } from "./usage.js";
 
 describe("buildUsageText", () => {
@@ -18,5 +19,11 @@ describe("buildUsageText", () => {
   it("tolerates a command with no description", () => {
     const text = buildUsageText({ x: () => undefined }, {});
     expect(text).toContain("x");
+  });
+});
+
+describe("commandDescriptions", () => {
+  it("covers every command registered in commands (no silent blank descriptions)", () => {
+    expect(Object.keys(commandDescriptions).sort()).toEqual(Object.keys(commands).sort());
   });
 });
