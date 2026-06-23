@@ -90,6 +90,28 @@ describe("command registry", () => {
     expect(readIssues(cwd).map((issue) => issue.title)).toEqual(["first", "second"]);
   });
 
+  it("log-issue appends a progress entry, then show --json reports hasLog", () => {
+    commands.init(cwd, []);
+    commands["add-issue"](cwd, ["Dark mode"]);
+    commands["log-issue"](cwd, ["1", "investigate root cause", "--type", "plan"]);
+    const result = JSON.parse(commands.show(cwd, ["--json"]) as string);
+    expect(result.backlog[0].hasLog).toBe(true);
+  });
+
+  it("log-issue requires a --type flag", () => {
+    commands.init(cwd, []);
+    commands["add-issue"](cwd, ["Dark mode"]);
+    expect(() => commands["log-issue"](cwd, ["1", "investigate"])).toThrow(/--type/);
+  });
+
+  it("show-log returns the logged entries for an issue as JSON", () => {
+    commands.init(cwd, []);
+    commands["add-issue"](cwd, ["Dark mode"]);
+    commands["log-issue"](cwd, ["1", "investigate root cause", "--type", "plan"]);
+    const entries = JSON.parse(commands["show-log"](cwd, ["1"]) as string);
+    expect(entries).toMatchObject([{ issueId: 1, type: "plan", message: "investigate root cause" }]);
+  });
+
   it("install-skills copies the shipped skills into .claude/skills/", () => {
     commands["install-skills"](cwd, []);
     expect(
