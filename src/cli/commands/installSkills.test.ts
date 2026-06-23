@@ -2,6 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { skillsSourceDir } from "../../packageRoot.js";
 import { installSkills } from "./installSkills.js";
 
 describe("installSkills", () => {
@@ -73,5 +74,24 @@ describe("installSkills", () => {
     expect(() => installSkills(cwd, missingDir)).toThrow(
       `Skills source directory "${missingDir}" does not exist`,
     );
+  });
+});
+
+describe("skill source files", () => {
+  it("every SKILL.md uses npx pauta <cmd>, not bare pauta <cmd>", () => {
+    const src = skillsSourceDir();
+    const skillDirs = fs.readdirSync(src);
+    const violations: string[] = [];
+    for (const dir of skillDirs) {
+      const skillFile = path.join(src, dir, "SKILL.md");
+      if (!fs.existsSync(skillFile)) continue;
+      const content = fs.readFileSync(skillFile, "utf8");
+      // Match backtick-invocations of pauta commands (not skill names like `pauta-add-issue`)
+      const bareInvocations = content.match(/`pauta [a-z]/g);
+      if (bareInvocations) {
+        violations.push(`${dir}/SKILL.md: ${bareInvocations.join(", ")}`);
+      }
+    }
+    expect(violations).toEqual([]);
   });
 });

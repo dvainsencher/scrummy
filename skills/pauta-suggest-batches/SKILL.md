@@ -7,7 +7,7 @@ description: This skill should be used when the user wants help turning a messy 
 
 This project tracks work with `pauta`, a flat-file backlog/sprint manager. The one
 rule that matters: **the `pauta` CLI is the only writer to `docs/roadmap/*`.** You
-read the plan via `pauta show --json` and you write to it only by calling `pauta`
+read the plan via `npx pauta show --json` and you write to it only by calling `pauta`
 commands — never by editing `docs/roadmap/issues.jsonl`, `docs/roadmap/sprints.json`,
 or `docs/roadmap/specs/*.md` directly.
 
@@ -20,7 +20,7 @@ is something an agent (or a person) could hold in mind at once.
 
 ## Steps
 
-1. Run `pauta show --json` to read the backlog (issues with no sprint) and the
+1. Run `npx pauta show --json` to read the backlog (issues with no sprint) and the
    existing sprints (names, goals, positions, status).
 2. Look for backlog issues that belong together — same feature area, same
    dependency chain, or things that would naturally get worked on in the same
@@ -34,9 +34,9 @@ is something an agent (or a person) could hold in mind at once.
    a structural change to the user's plan; don't execute silently.
 5. Once the user confirms (or edits the proposal), execute via `pauta` commands
    only:
-   - `pauta create-sprint <name> --goal "..."` for new sprints
-   - `pauta move <id> <sprint-name>` to assign each issue
-   - `pauta set-position <name> <n>` if the user specifies an order
+   - `npx pauta create-sprint <name> --goal "..."` for new sprints
+   - `npx pauta move <id> <sprint-name>` to assign each issue
+   - `npx pauta set-position <name> <n>` if the user specifies an order
 
 After executing, summarize what moved in one short list — don't re-print the
 whole plan unless asked.

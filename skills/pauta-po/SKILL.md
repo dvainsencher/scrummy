@@ -7,7 +7,7 @@ description: This skill should be used as the general conversational front door 
 
 This project tracks work with `pauta`, a flat-file backlog/sprint manager. The one
 rule that matters: **the `pauta` CLI is the only writer to `docs/roadmap/*`.** You
-read the plan via `pauta show --json` and you write to it only by calling `pauta`
+read the plan via `npx pauta show --json` and you write to it only by calling `pauta`
 commands — never by editing `docs/roadmap/issues.jsonl`, `docs/roadmap/sprints.json`,
 or `docs/roadmap/specs/*.md` directly.
 
@@ -29,7 +29,7 @@ to make one.
 
 These are standing defaults for every PO interaction, not per-request afterthoughts:
 
-1. **Re-read before reasoning** — re-run `pauta show --json` fresh before
+1. **Re-read before reasoning** — re-run `npx pauta show --json` fresh before
    proposing or changing anything non-trivial. Never reason from a remembered
    backlog state from earlier in the conversation; it may be stale.
 2. **State intent before acting, every time** — even a quick "add this" gets a
@@ -60,10 +60,10 @@ These are standing defaults for every PO interaction, not per-request afterthoug
    Don't shortcut it with a chat summary instead.
 9. **Log checkpoints on long-running issues, don't fabricate them on resume** —
    on a `doing` issue expected to span multiple sessions, call
-   `pauta log-issue <id> --type plan|verified|pending "<message>"` at natural
+   `npx pauta log-issue <id> --type plan|verified|pending "<message>"` at natural
    checkpoints (a plan step decided, an outcome confirmed, a thread left open) —
    not after every tool call. When resuming one (see the routing row below), only
-   ever summarize from `pauta show-log <id>`; if `hasLog` is `false`, say plainly
+   ever summarize from `npx pauta show-log <id>`; if `hasLog` is `false`, say plainly
    that there's no recorded history instead of guessing from the title alone.
 
 ## Routing
@@ -73,8 +73,8 @@ guess between two close matches — ask which they mean.
 
 | Intent (examples) | Action |
 |---|---|
-| "where are we", "catch me up", "what's the status" | Answer directly from a fresh `pauta show --json` — no sub-skill needed. |
-| "PO, proceed sprint X", "PO, continue sprint X", "where did I leave off [on issue #N]", "resume issue #N" | Run `pauta show --json` fresh, find the `doing` issue(s) in scope (every `doing` issue in sprint X, or just issue #N). For each one with `hasLog: true`, run `pauta show-log <id>` and summarize the plan/verified/pending entries before continuing the work. For any with `hasLog: false`, say so plainly — don't invent history. See principle 9. |
+| "where are we", "catch me up", "what's the status" | Answer directly from a fresh `npx pauta show --json` — no sub-skill needed. |
+| "PO, proceed sprint X", "PO, continue sprint X", "where did I leave off [on issue #N]", "resume issue #N" | Run `npx pauta show --json` fresh, find the `doing` issue(s) in scope (every `doing` issue in sprint X, or just issue #N). For each one with `hasLog: true`, run `npx pauta show-log <id>` and summarize the plan/verified/pending entries before continuing the work. For any with `hasLog: false`, say so plainly — don't invent history. See principle 9. |
 | "what should I work on next" | Answer from `show --json`, but **state the gap plainly**: issues have no priority field, only sprints do (`position`); issues within a sprint come back in id/creation order, not deliberate priority. Offer to ask which matters most rather than inventing an answer. |
 | "is sprint X ready to start" | Check directly: any issue still `idea`? If so, suggest `pauta-refine` (single or batch mode, per its own up-front question) over that sprint before activating it. |
 | "let's plan the backlog" / "let's start working on this new project" (no issues yet) | `pauta-bootstrap`. |
@@ -112,7 +112,7 @@ There's no CLI-level enforcement of this (`set-status` has no validation hook
 beyond status-name checking) — it's a discipline this skill and `pauta-add-issue`
 hold themselves to:
 
-- Before the PO issues `pauta set-status <id> ready` or `pauta set-active <name>`
+- Before the PO issues `npx pauta set-status <id> ready` or `npx pauta set-active <name>`
   *directly* (not as part of following another skill's own flow, which has its
   own rules), run `pauta-refine`'s single-issue check first.
 - `pauta-add-issue` already does the equivalent for issues filed straight at

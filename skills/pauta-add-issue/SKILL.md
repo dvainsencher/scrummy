@@ -7,14 +7,14 @@ description: This skill should be used when, during or after a feature/design di
 
 This project tracks work with `pauta`, a flat-file backlog/sprint manager. The one
 rule that matters: **the `pauta` CLI is the only writer to `docs/roadmap/*`.** You
-read the plan via `pauta show --json` and you write to it only by calling `pauta`
+read the plan via `npx pauta show --json` and you write to it only by calling `pauta`
 commands — never by editing `docs/roadmap/issues.jsonl`, `docs/roadmap/sprints.json`,
 or `docs/roadmap/specs/*.md` directly, even though they're plain files you technically
 could open.
 
 ## Steps
 
-1. Run `pauta show --json` to see the current backlog and sprints (names, goals,
+1. Run `npx pauta show --json` to see the current backlog and sprints (names, goals,
    positions, which sprint is active, existing issues).
 2. From the discussion, decide:
    - **title** — one line summarizing the work.
@@ -32,15 +32,15 @@ could open.
    - **Filing directly at `--status ready`** is a bigger commitment than the
      `idea` default — run `pauta-refine`'s *full* check instead (clarity +
      consistency + spec quality), not just clarity, before calling `add-issue`.
-4. Call `pauta add-issue "<title>" [--status idea|ready] [--sprint <name>]`. It prints
+4. Call `npx pauta add-issue "<title>" [--status idea|ready] [--sprint <name>]`. It prints
    the new issue's id.
 5. If the discussion produced more than a one-line idea — open questions, design
-   notes, acceptance criteria — run `pauta spec <id>` to create `specs/<id>.md`, then
+   notes, acceptance criteria — run `npx pauta spec <id>` to create `specs/<id>.md`, then
    write the detail into that file with your normal file-editing tools (the spec
    *content* isn't roadmap metadata, so editing it directly is fine — only
    `issues.jsonl`/`sprints.json` and spec *creation* go through the CLI).
 6. If the user is describing an issue that already exists but should move sprints,
-   use `pauta move <id> <sprint-name>` or `pauta move <id> --backlog` instead of
+   use `npx pauta move <id> <sprint-name>` or `npx pauta move <id> --backlog` instead of
    adding a duplicate.
 
 Tell the user the new issue's id and where it landed (backlog or which sprint) in one
