@@ -28,9 +28,7 @@ function levenshtein(a: string, b: string): number {
 function closestSprint(sprints: Sprint[], name: string): string | undefined {
   const lower = name.toLowerCase();
   // Substring match first (sprint names are long free-text — partial input is common)
-  const substringMatch = sprints.find(
-    (s) => s.name.toLowerCase().includes(lower) || lower.includes(s.name.toLowerCase()),
-  );
+  const substringMatch = sprints.find((s) => s.name.toLowerCase().includes(lower));
   if (substringMatch) return substringMatch.name;
   // Levenshtein fallback — only suggest when edit distance is small relative to name length
   let best: Sprint | undefined;
