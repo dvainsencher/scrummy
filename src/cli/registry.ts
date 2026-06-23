@@ -4,6 +4,7 @@ import { editIssue } from "./commands/editIssue.js";
 import { editSprint } from "./commands/editSprint.js";
 import { importFromFile } from "./commands/import.js";
 import { init } from "./commands/init.js";
+import { logProgress } from "./commands/logProgress.js";
 import { move, moveToBacklog } from "./commands/move.js";
 import { removeIssue } from "./commands/removeIssue.js";
 import { removeSprint } from "./commands/removeSprint.js";
@@ -13,6 +14,7 @@ import { setSprintStatus } from "./commands/setSprintStatus.js";
 import { installSkills } from "./commands/installSkills.js";
 import { setStatus } from "./commands/setStatus.js";
 import { show } from "./commands/show.js";
+import { showLog } from "./commands/showLog.js";
 import { spec } from "./commands/spec.js";
 import { skillsSourceDir } from "../packageRoot.js";
 import { parseArgs, requireIntPositional, requirePositional } from "./parse.js";
@@ -123,6 +125,22 @@ export const commands: Record<string, CommandHandler> = {
     const parsed = parseArgs(args);
     const id = requireIntPositional(parsed, 0, "id");
     return spec(cwd, id);
+  },
+
+  "log-issue": (cwd, args) => {
+    const parsed = parseArgs(args);
+    const id = requireIntPositional(parsed, 0, "id");
+    const message = requirePositional(parsed, 1, "message");
+    if (parsed.flags.type === undefined || parsed.flags.type === true) {
+      throw new Error("Missing required flag: --type");
+    }
+    logProgress(cwd, id, parsed.flags.type, message);
+  },
+
+  "show-log": (cwd, args) => {
+    const parsed = parseArgs(args);
+    const id = requireIntPositional(parsed, 0, "id");
+    return JSON.stringify(showLog(cwd, id), null, 2);
   },
 
   show: (cwd, args) => {

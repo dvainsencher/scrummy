@@ -18,6 +18,7 @@ describe("renderJson", () => {
           createdAt: "",
           updatedAt: "",
           hasSpec: false,
+          hasLog: false,
         },
       ],
     });
@@ -37,6 +38,7 @@ describe("renderPretty", () => {
           createdAt: "",
           updatedAt: "",
           hasSpec: true,
+          hasLog: true,
         },
         {
           id: 15,
@@ -46,6 +48,7 @@ describe("renderPretty", () => {
           createdAt: "",
           updatedAt: "",
           hasSpec: false,
+          hasLog: false,
         },
       ],
     });
@@ -55,6 +58,7 @@ describe("renderPretty", () => {
     expect(out).toContain("ready");
     expect(out).toContain("Rework auth");
     expect(out).toContain("[spec]");
+    expect(out).toContain("[log]");
     expect(out).toContain("#15");
     expect(out).toContain("Dark mode");
   });
@@ -102,6 +106,7 @@ describe("renderPretty", () => {
               createdAt: "",
               updatedAt: "",
               hasSpec: false,
+              hasLog: false,
             },
           ],
         },

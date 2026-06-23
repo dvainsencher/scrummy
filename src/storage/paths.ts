@@ -19,3 +19,7 @@ export function specsDir(cwd: string): string {
 export function specFilePath(cwd: string, id: number): string {
   return path.join(specsDir(cwd), `${id}.md`);
 }
+
+export function progressFilePath(cwd: string): string {
+  return path.join(roadmapDir(cwd), "progress.jsonl");
+}

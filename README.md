@@ -30,6 +30,7 @@ The atom of work. An issue has:
 | `status` | `idea → ready → doing → done` (lifecycle only) |
 | `sprint` | a sprint name, or empty |
 | spec | optional file at `specs/<id>.md` for detailed write-ups |
+| progress log | optional append-only entries in `progress.jsonl`, for resuming a long-running issue across sessions — see `pauta log-issue`/`pauta show-log` below |
 
 **Empty `sprint` = the backlog.** The backlog is just every issue not assigned to a sprint — a real inbox for raw ideas.
 
@@ -86,6 +87,7 @@ Everything follows from this:
 docs/roadmap/
   issues.jsonl     # one issue per line — clean diffs, append-friendly, parse-safe
   sprints.json     # sprint metadata (name, position, status, goal, notes)
+  progress.jsonl   # append-only progress-log entries, keyed by issueId
   specs/
     3.md           # optional, keyed by issue id
     12.md
@@ -120,6 +122,8 @@ pauta set-sprint-status <name> <planned|active|done>
 
 pauta spec <id>                            # create/return path to specs/<id>.md
 
+pauta log-issue <id> --type plan|verified|pending "<message>"   # append a progress-log entry for the issue
+
 pauta install-skills                       # copy the Claude Code skill files into .claude/skills/
 ```
 
@@ -134,6 +138,7 @@ sprint's issues and omits the backlog section.
 ```
 pauta show [--sprint <name>] [--done]      # the human-scannable whole plan
 pauta show --json                          # same content, structured, for the agent
+pauta show-log <id>                        # the progress-log entries for one issue, structured, for the agent
 ```
 
 Default `show` output:
@@ -147,7 +152,7 @@ BACKLOG (4)
 
 ▶ SPRINT auth-hardening   (active)
   goal: close the session/token gaps before launch
-  #3   doing  Rotate signing keys              [spec]
+  #3   doing  Rotate signing keys              [spec]  [log]
   #9   ready  Lock down password reset flow
   #12  ready  Rework auth token refresh        [spec]
 
@@ -158,6 +163,10 @@ BACKLOG (4)
 ```
 
 The pretty view and the `--json` view render from the same data, so they can't disagree.
+
+`hasSpec`/`hasLog` (the `[spec]`/`[log]` tags above) tell an agent whether an issue
+has a spec file or progress-log entries worth reading before acting — `pauta spec
+<id>` / `pauta show-log <id>` for the content itself.
 
 ### Smart ops (use an LLM · cost tokens · invoked deliberately)
 

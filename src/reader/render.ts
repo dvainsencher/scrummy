@@ -35,5 +35,6 @@ function renderSprintHeader(sprint: SprintGroup): string {
 
 function renderIssueLine(issue: IssueView): string {
   const specTag = issue.hasSpec ? "  [spec]" : "";
-  return `  #${issue.id}  ${issue.status.padEnd(5)} ${issue.title}${specTag}`;
+  const logTag = issue.hasLog ? "  [log]" : "";
+  return `  #${issue.id}  ${issue.status.padEnd(5)} ${issue.title}${specTag}${logTag}`;
 }

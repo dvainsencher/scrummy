@@ -58,6 +58,13 @@ These are standing defaults for every PO interaction, not per-request afterthoug
 8. **The artifact outranks the chat** — when `pauta-migrate` is in play, defer
    entirely to its file-based approval flow (`docs/roadmap-legacy/_migration-plan.md`).
    Don't shortcut it with a chat summary instead.
+9. **Log checkpoints on long-running issues, don't fabricate them on resume** —
+   on a `doing` issue expected to span multiple sessions, call
+   `pauta log-issue <id> --type plan|verified|pending "<message>"` at natural
+   checkpoints (a plan step decided, an outcome confirmed, a thread left open) —
+   not after every tool call. When resuming one (see the routing row below), only
+   ever summarize from `pauta show-log <id>`; if `hasLog` is `false`, say plainly
+   that there's no recorded history instead of guessing from the title alone.
 
 ## Routing
 
@@ -67,6 +74,7 @@ guess between two close matches — ask which they mean.
 | Intent (examples) | Action |
 |---|---|
 | "where are we", "catch me up", "what's the status" | Answer directly from a fresh `pauta show --json` — no sub-skill needed. |
+| "PO, proceed sprint X", "PO, continue sprint X", "where did I leave off [on issue #N]", "resume issue #N" | Run `pauta show --json` fresh, find the `doing` issue(s) in scope (every `doing` issue in sprint X, or just issue #N). For each one with `hasLog: true`, run `pauta show-log <id>` and summarize the plan/verified/pending entries before continuing the work. For any with `hasLog: false`, say so plainly — don't invent history. See principle 9. |
 | "what should I work on next" | Answer from `show --json`, but **state the gap plainly**: issues have no priority field, only sprints do (`position`); issues within a sprint come back in id/creation order, not deliberate priority. Offer to ask which matters most rather than inventing an answer. |
 | "is sprint X ready to start" | Check directly: any issue still `idea`? If so, suggest `pauta-refine` (single or batch mode, per its own up-front question) over that sprint before activating it. |
 | "let's plan the backlog" / "let's start working on this new project" (no issues yet) | `pauta-bootstrap`. |

@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { addIssue } from "../cli/commands/addIssue.js";
 import { createSprint } from "../cli/commands/createSprint.js";
 import { init } from "../cli/commands/init.js";
+import { logProgress } from "../cli/commands/logProgress.js";
 import { move } from "../cli/commands/move.js";
 import { setActive } from "../cli/commands/setActive.js";
 import { setStatus } from "../cli/commands/setStatus.js";
@@ -36,6 +37,13 @@ describe("buildPlan", () => {
     expect(buildPlan(cwd, {}).backlog[0].hasSpec).toBe(false);
     spec(cwd, id);
     expect(buildPlan(cwd, {}).backlog[0].hasSpec).toBe(true);
+  });
+
+  it("derives hasLog from whether any progress entries exist for the issue", () => {
+    const id = addIssue(cwd, "Dark mode");
+    expect(buildPlan(cwd, {}).backlog[0].hasLog).toBe(false);
+    logProgress(cwd, id, "plan", "investigate root cause");
+    expect(buildPlan(cwd, {}).backlog[0].hasLog).toBe(true);
   });
 
   it("groups issues under their sprint", () => {

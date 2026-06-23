@@ -171,6 +171,21 @@ Design decision: three actions (migrate / audit / refine), not two — fidelity-
 
 ---
 
+## ✅ SPRINT progress-log   (position 90)
+
+**goal:** give a long-running `doing` issue a resumable history, so a fresh
+session (after context compaction or an outright restart) can pick up where the
+last one left off instead of re-deriving state from just the issue's title and
+status. Inspired by the zero-drift pattern (a `TASK.md` log a fresh session reads
+to resume), kept inside pauta's existing "CLI is the only writer" architecture
+instead of an agent-edited markdown file.
+
+```
+#123  done   Per-issue progress log — new append-only `docs/roadmap/progress.jsonl` store (mirrors `issues.jsonl`'s one-line-per-entry, parse-or-throw pattern, but never bulk-rewritten). New writer command `pauta log-issue <id> --type plan|verified|pending "<message>"` and new reader command `pauta show-log <id>`; `pauta show --json`/`show` gain a `hasLog` flag (`[log]` tag in the pretty view) alongside the existing `hasSpec`/`[spec]`. `pauta-po` (skill) gained an explicit routing row — "PO, proceed/continue sprint X", "where did I leave off" — that reads `show-log` for every in-scope `doing` issue and summarizes before continuing, plus a standing principle to log checkpoints (not every tool call) on multi-session issues and never fabricate history when `hasLog` is false.
+```
+
+---
+
 ### How to read this plan
 
 Positions 10/20/40 are *suggestions*. If `the-reader` turns out to matter more than finishing every `foundation` nicety, activate it early — `set-active the-reader` — and nothing breaks, because there's no enforced order. The plan is a map, not a track.

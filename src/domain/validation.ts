@@ -1,5 +1,12 @@
 import { existsSync, readdirSync, statSync } from "node:fs";
-import { ISSUE_STATUSES, SPRINT_STATUSES, type Issue, type Sprint } from "./types.js";
+import {
+  ISSUE_STATUSES,
+  PROGRESS_ENTRY_TYPES,
+  SPRINT_STATUSES,
+  type Issue,
+  type ProgressEntryType,
+  type Sprint,
+} from "./types.js";
 
 export function assertSprintExists(sprints: Sprint[], name: string): void {
   if (!sprints.some((sprint) => sprint.name === name)) {
@@ -33,6 +40,14 @@ export function assertIssueStatus(status: string): void {
   }
 }
 
+export function assertProgressType(type: string): void {
+  if (!PROGRESS_ENTRY_TYPES.includes(type as ProgressEntryType)) {
+    throw new Error(
+      `Invalid progress type "${type}" — must be one of: ${PROGRESS_ENTRY_TYPES.join(", ")}`,
+    );
+  }
+}
+
 export function assertSprintStatus(status: string): void {
   if (!SPRINT_STATUSES.includes(status as Sprint["status"])) {
     throw new Error(
@@ -53,7 +68,7 @@ export function assertDirectoryExists(dirPath: string, label: string): void {
   }
 }
 
-const PAUTA_OWNED_ROADMAP_ENTRIES = new Set(["issues.jsonl", "sprints.json", "specs"]);
+const PAUTA_OWNED_ROADMAP_ENTRIES = new Set(["issues.jsonl", "sprints.json", "progress.jsonl", "specs"]);
 
 export function assertRoadmapDirNotForeign(roadmapDir: string): void {
   if (!existsSync(roadmapDir)) {
