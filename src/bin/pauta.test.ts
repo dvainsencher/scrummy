@@ -1,8 +1,9 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { main } from "./pauta.js";
+import { isEntryPoint, main } from "./pauta.js";
 
 describe("main", () => {
   let cwd: string;
@@ -63,5 +64,32 @@ describe("main", () => {
     const exitCode = run(["edit-issue", "999", "--title", "x"]);
     expect(exitCode).toBe(1);
     expect(stderr.join("")).toContain("999");
+  });
+});
+
+describe("isEntryPoint", () => {
+  const pautaPath = path.join(import.meta.dirname, "pauta.ts");
+  const pautaUrl = pathToFileURL(pautaPath).href;
+
+  it("returns true when argv[1] is the real path to the module", () => {
+    expect(isEntryPoint(pautaPath, pautaUrl)).toBe(true);
+  });
+
+  it("resolves a symlinked argv[1] (e.g. node_modules/.bin/pauta) to the real module path", () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pauta-symlink-"));
+    const symlinkPath = path.join(tmpDir, "pauta-bin");
+    fs.symlinkSync(pautaPath, symlinkPath);
+
+    expect(isEntryPoint(symlinkPath, pautaUrl)).toBe(true);
+
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it("returns false for an unrelated path", () => {
+    expect(isEntryPoint("/some/unrelated/file.js", pautaUrl)).toBe(false);
+  });
+
+  it("returns false when argv[1] is undefined", () => {
+    expect(isEntryPoint(undefined, pautaUrl)).toBe(false);
   });
 });

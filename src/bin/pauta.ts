@@ -1,6 +1,19 @@
 #!/usr/bin/env node
+import { realpathSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { commandDescriptions, commands } from "../cli/registry.js";
 import { buildUsageText } from "../cli/usage.js";
+
+export function isEntryPoint(argv1: string | undefined, moduleUrl: string): boolean {
+  if (argv1 === undefined) {
+    return false;
+  }
+  try {
+    return realpathSync(argv1) === fileURLToPath(moduleUrl);
+  } catch {
+    return false;
+  }
+}
 
 export interface MainIO {
   argv: string[];
@@ -37,7 +50,7 @@ export function main(io: MainIO): number {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isEntryPoint(process.argv[1], import.meta.url)) {
   process.exitCode = main({
     argv: process.argv.slice(2),
     cwd: process.cwd(),
