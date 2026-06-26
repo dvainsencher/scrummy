@@ -50,7 +50,7 @@ function Card({ issue, selected }: { issue: IssueView; selected: boolean }) {
         <Text color={badge}>[{issue.status}]</Text>
       </Box>
       <Text wrap="truncate-end">{issue.title}</Text>
-      <Text dimColor>{issue.sprint ?? " "}</Text>
+      <Text dimColor>{issue.sprint || " "}</Text>
       <Text dimColor>{indicators || " "}</Text>
     </Box>
   );

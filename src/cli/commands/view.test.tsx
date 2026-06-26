@@ -84,7 +84,7 @@ describe("KanbanApp", () => {
   });
 
   it("triggers scroll when 3 sprint issues are present without explicit maxVisibleCards (CARD_HEIGHT must account for sprint line)", () => {
-    // Sprint issues render 6 lines each: border-top, id/status, title, sprint-name, border-bottom, margin.
+    // All cards render 7 lines: border-top, id/status, title, sprint-name, indicators, border-bottom, margin.
     // The test mock has no stdout.rows, so terminalRows falls back to 24 and
     // maxVisible = floor((24 - FIXED_ROWS) / CARD_HEIGHT). If CARD_HEIGHT=5 (wrong), maxVisible=3
     // and 3 issues fit without scrolling — but the 3rd card overflows the terminal and ink clips it,
@@ -151,6 +151,19 @@ describe("KanbanApp", () => {
     const frame = lastFrame() ?? "";
     expect(frame).toContain("Issue 3");   // now visible
     expect(frame).not.toContain("Issue 1"); // scrolled past
+  });
+
+  it("triggers scroll for 3 backlog cards (sprint='', no indicators) — sprint || placeholder must render to keep CARD_HEIGHT=7", () => {
+    // Backlog cards have sprint="" and no indicators. With the buggy ?? operator,
+    // the sprint row rendered empty text (0 height in Ink), shrinking cards to 6 lines
+    // and causing maxVisible to be overestimated — same overflow bug as before.
+    const issues = Array.from({ length: 3 }, (_, i) => ({
+      id: i + 1, title: `Issue ${i + 1}`, status: "idea" as const,
+      sprint: "", createdAt: "", updatedAt: "", hasSpec: false, hasLog: false,
+    }));
+    const data = makeData({ columns: { idea: issues, ready: [], doing: [], done: [] } });
+    const { lastFrame } = render(<KanbanApp data={data} />);
+    expect(lastFrame() ?? "").toMatch(/↓.*more/);
   });
 });
 
