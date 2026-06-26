@@ -28,7 +28,9 @@ is something an agent (or a person) could hold in mind at once.
    don't force a grouping just to use every issue.
 3. For each proposed group, draft: a sprint name, a one-line goal, and which
    backlog issue ids would move into it. Prefer adding to an existing sprint over
-   creating a new one if the issues fit its stated goal.
+   creating a new one if the issues fit its stated goal. **Sprint names must be
+   lowercase kebab-case** (e.g. `terminal-kanban-viewer`, not `Terminal Kanban
+   Viewer`) — this is the established convention across all existing sprints.
 4. **Propose the groupings in chat before acting** — list each proposed sprint
    (name, goal, issue ids/titles) and any issues you're leaving ungrouped. This is
    a structural change to the user's plan; don't execute silently.
