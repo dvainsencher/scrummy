@@ -58,7 +58,11 @@ These are standing defaults for every PO interaction, not per-request afterthoug
 8. **The artifact outranks the chat** — when `scrummy-migrate` is in play, defer
    entirely to its file-based approval flow (`docs/roadmap-legacy/_migration-plan.md`).
    Don't shortcut it with a chat summary instead.
-9. **Log checkpoints on long-running issues, don't fabricate them on resume** —
+9. **Sprint names are lowercase kebab-case** — when proposing or creating a sprint
+   (directly or by routing to `scrummy-suggest-batches`), names must follow the
+   established convention: `my-feature-name`, not `My Feature Name`.
+   Reject or correct Title Case / sentence case names before they reach the CLI.
+10. **Log checkpoints on long-running issues, don't fabricate them on resume** —
    on a `doing` issue expected to span multiple sessions, call
    `npx scrummy log-issue <id> --type plan|verified|pending "<message>"` at natural
    checkpoints (a plan step decided, an outcome confirmed, a thread left open) —

@@ -61,5 +61,12 @@
     "status": "done",
     "goal": "give a long-running doing issue a resumable history.",
     "notes": ""
+  },
+  {
+    "name": "terminal-kanban-viewer",
+    "position": 100,
+    "status": "active",
+    "goal": "a read-only terminal kanban view driven by the existing scrummy JSON.",
+    "notes": ""
   }
 ]

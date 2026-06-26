@@ -61,7 +61,9 @@ one you're in before reading further:
    issues under each, plus any issues that don't fit a sprint yet (leave those in
    the backlog). Keep it small — a handful of sprints with a handful of issues
    each, not an exhaustive decomposition. Mark issues `ready` only if they're
-   well-defined enough to start immediately; everything else is `idea`.
+   well-defined enough to start immediately; everything else is `idea`. **Sprint
+   names must be lowercase kebab-case** (e.g. `my-feature-name`) — this is the
+   established convention; never use Title Case or spaces in a sprint name.
 4. **Propose the plan in chat before acting** — list each sprint (name, goal) with
    its issues (title, status), and the ungrouped backlog issues. This is the
    project's first plan; don't execute silently.
