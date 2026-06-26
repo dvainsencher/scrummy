@@ -68,5 +68,12 @@
     "status": "done",
     "goal": "a read-only terminal kanban view driven by the existing scrummy JSON.",
     "notes": ""
+  },
+  {
+    "name": "kanban-viewer-polish",
+    "position": 110,
+    "status": "done",
+    "goal": "Fix done-column visibility, scroll-to-selected navigation, and sprint-state display in the kanban viewer.",
+    "notes": ""
   }
 ]

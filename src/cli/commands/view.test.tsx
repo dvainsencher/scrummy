@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render } from "ink-testing-library";
 import React from "react";
-import { KanbanApp } from "./view.js";
+import { KanbanApp, clampScroll } from "./view.js";
 import type { KanbanData } from "./kanban.js";
 
 function makeData(overrides: Partial<KanbanData> = {}): KanbanData {
@@ -58,5 +58,59 @@ describe("KanbanApp", () => {
     const data = makeData({ columns: { idea: [], ready: [], doing: issues, done: [] } });
     const { lastFrame } = render(<KanbanApp data={data} />);
     expect(lastFrame() ?? "").toContain("L");
+  });
+
+  it("renders issues in the done column", () => {
+    const issue = { id: 99, title: "Shipped", status: "done" as const, sprint: "s1", createdAt: "", updatedAt: "", hasSpec: false, hasLog: false };
+    const data = makeData({ columns: { idea: [], ready: [], doing: [], done: [issue] } });
+    const { lastFrame } = render(<KanbanApp data={data} />);
+    const frame = lastFrame() ?? "";
+    expect(frame).toContain("#99");
+    expect(frame).toContain("Shipped");
+  });
+
+  it("shows down-scroll indicator when column has more issues than maxVisibleCards", () => {
+    const issues = Array.from({ length: 4 }, (_, i) => ({
+      id: i + 1, title: `Issue ${i + 1}`, status: "idea" as const,
+      sprint: "s1", createdAt: "", updatedAt: "", hasSpec: false, hasLog: false,
+    }));
+    const data = makeData({ columns: { idea: issues, ready: [], doing: [], done: [] } });
+    const { lastFrame } = render(<KanbanApp data={data} maxVisibleCards={2} />);
+    expect(lastFrame() ?? "").toMatch(/↓.*more/);
+  });
+
+  it("shows up-scroll indicator and hides scrolled-past issues when scrollOffset > 0", () => {
+    const issues = Array.from({ length: 4 }, (_, i) => ({
+      id: i + 1, title: `Issue ${i + 1}`, status: "idea" as const,
+      sprint: "s1", createdAt: "", updatedAt: "", hasSpec: false, hasLog: false,
+    }));
+    const data = makeData({ columns: { idea: issues, ready: [], doing: [], done: [] } });
+    // scrollOffset=2 means rows 0 and 1 are hidden above the viewport
+    const { lastFrame } = render(<KanbanApp data={data} maxVisibleCards={2} initialScrollOffsets={[2, 0, 0, 0]} />);
+    const frame = lastFrame() ?? "";
+    expect(frame).toMatch(/↑.*more/);
+    expect(frame).not.toContain("Issue 1");
+    expect(frame).not.toContain("Issue 2");
+  });
+});
+
+describe("clampScroll", () => {
+  it("returns offset unchanged when rowIndex is within view", () => {
+    expect(clampScroll(0, 1, 3)).toBe(0);
+    expect(clampScroll(2, 3, 3)).toBe(2);
+  });
+
+  it("scrolls down to reveal rowIndex when it is past the bottom of viewport", () => {
+    expect(clampScroll(0, 3, 2)).toBe(2); // offset must shift so row 3 is at bottom
+    expect(clampScroll(0, 5, 3)).toBe(3);
+  });
+
+  it("scrolls up to reveal rowIndex when it is above the top of viewport", () => {
+    expect(clampScroll(3, 1, 2)).toBe(1); // offset jumps up to row 1
+    expect(clampScroll(5, 2, 3)).toBe(2);
+  });
+
+  it("clamps to 0 when rowIndex is 0", () => {
+    expect(clampScroll(0, 0, 5)).toBe(0);
   });
 });

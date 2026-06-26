@@ -44,7 +44,9 @@ export function SprintPicker({ sprints, selected, onSelect, onCancel }: SprintPi
           <Text color={i === cursor ? "cyan" : undefined} bold={i === cursor}>
             {i === cursor ? "▶ " : "  "}
             {s.name}
-            {s.active ? <Text color="green"> (active)</Text> : null}
+            {s.status === "active" && <Text color="green"> (active)</Text>}
+            {s.status === "done" && <Text dimColor> (done)</Text>}
+            {s.status === "planned" && <Text dimColor> (planned)</Text>}
           </Text>
         </Box>
       ))}

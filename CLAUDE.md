@@ -26,7 +26,8 @@ through the CLI.
 
 ## Backlog
 
-This project tracks its own work with scrummy. Use `npx scrummy show` to see
-the current backlog and sprint state. Do not read or write `SPRINTS.md` (legacy,
-superseded by `docs/roadmap/`) or `docs/roadmap/*` files directly — go through
-the CLI.
+This project tracks its own work with scrummy. Use `npm exec scrummy -- show` to see
+the current backlog and sprint state (in npm 11+, `npx scrummy` no longer resolves
+local binaries — use `npm exec scrummy -- <cmd>` or `./node_modules/.bin/scrummy <cmd>`
+instead). Do not read or write `SPRINTS.md` (legacy, superseded by `docs/roadmap/`) or
+`docs/roadmap/*` files directly — go through the CLI.

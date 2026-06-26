@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Box, Text, render, useInput, useApp } from "ink";
+import { Box, Text, render, useInput, useApp, useStdout } from "ink";
 import fs from "node:fs";
 import type { IssueView, Plan } from "../../reader/plan.js";
 import type { IssueStatus, ProgressEntry } from "../../domain/types.js";
@@ -12,12 +12,21 @@ import { SprintPicker } from "./sprintPicker.js";
 import { moveLeft, moveRight, moveUp, moveDown, type NavState } from "./navigation.js";
 import { CardDetail } from "./cardDetail.js";
 
+const CARD_HEIGHT = 5;
+const FIXED_ROWS = 7;
+
 const STATUS_COLORS: Record<IssueStatus, string> = {
   idea: "gray",
   ready: "cyan",
   doing: "yellow",
   done: "green",
 };
+
+export function clampScroll(offset: number, rowIndex: number, maxVisible: number): number {
+  if (rowIndex < offset) return rowIndex;
+  if (rowIndex >= offset + maxVisible) return rowIndex - maxVisible + 1;
+  return offset;
+}
 
 function Card({ issue, selected }: { issue: IssueView; selected: boolean }) {
   const badge = STATUS_COLORS[issue.status];
@@ -47,22 +56,31 @@ function Column({
   issues,
   focused,
   selectedRow,
+  scrollOffset,
+  maxVisible,
 }: {
   status: IssueStatus;
   issues: IssueView[];
   focused: boolean;
   selectedRow: number;
+  scrollOffset: number;
+  maxVisible: number;
 }) {
   const color = STATUS_COLORS[status];
+  const visibleIssues = issues.slice(scrollOffset, scrollOffset + maxVisible);
+  const hiddenAbove = scrollOffset;
+  const hiddenBelow = Math.max(0, issues.length - scrollOffset - maxVisible);
   return (
     <Box flexDirection="column" width={26} marginRight={1}>
       <Box borderStyle="single" borderColor={focused ? "cyan" : undefined} paddingX={1}>
         <Text color={color} bold>{status.toUpperCase()}</Text>
         <Text dimColor> ({issues.length})</Text>
       </Box>
-      {issues.map((issue, i) => (
-        <Card key={issue.id} issue={issue} selected={focused && i === selectedRow} />
+      {hiddenAbove > 0 && <Text dimColor>  ↑ {hiddenAbove} more</Text>}
+      {visibleIssues.map((issue, i) => (
+        <Card key={issue.id} issue={issue} selected={focused && (i + scrollOffset) === selectedRow} />
       ))}
+      {hiddenBelow > 0 && <Text dimColor>  ↓ {hiddenBelow} more</Text>}
     </Box>
   );
 }
@@ -81,20 +99,39 @@ interface KanbanAppProps {
   data: KanbanData;
   plan?: Plan;
   cwd?: string;
+  maxVisibleCards?: number;
+  initialScrollOffsets?: number[];
 }
 
-export function KanbanApp({ data: initialData, plan, cwd }: KanbanAppProps) {
+export function KanbanApp({ data: initialData, plan, cwd, maxVisibleCards: maxVisibleProp, initialScrollOffsets }: KanbanAppProps) {
   const [data, setData] = useState(initialData);
   const [showPicker, setShowPicker] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [nav, setNav] = useState<NavState>({ colIndex: 0, rowIndex: 0 });
+  const [scrollOffsets, setScrollOffsets] = useState(initialScrollOffsets ?? [0, 0, 0, 0]);
   const [detail, setDetail] = useState<{ issue: IssueView; spec: string | null; log: ProgressEntry[] } | null>(null);
   const { exit } = useApp();
+  const { stdout } = useStdout();
+
+  const terminalRows = stdout?.rows ?? 24;
+  const maxVisible = maxVisibleProp ?? Math.max(1, Math.floor((terminalRows - FIXED_ROWS) / CARD_HEIGHT));
 
   const focusedIssue = (): IssueView | null => {
     const status = ISSUE_STATUSES[nav.colIndex];
     if (!status) return null;
     return data.columns[status][nav.rowIndex] ?? null;
+  };
+
+  const updateScroll = (newNav: NavState, prevOffsets: number[]): number[] => {
+    const newOffsets = [...prevOffsets];
+    newOffsets[newNav.colIndex] = clampScroll(newOffsets[newNav.colIndex], newNav.rowIndex, maxVisible);
+    return newOffsets;
+  };
+
+  const resetView = (newData: KanbanData) => {
+    setData(newData);
+    setNav({ colIndex: 0, rowIndex: 0 });
+    setScrollOffsets([0, 0, 0, 0]);
   };
 
   useInput((input, key) => {
@@ -113,14 +150,33 @@ export function KanbanApp({ data: initialData, plan, cwd }: KanbanAppProps) {
       return;
     }
     if ((input === "b" || input === "B") && plan) {
-      setData(selectKanbanView(plan, null));
-      setNav({ colIndex: 0, rowIndex: 0 });
+      resetView(selectKanbanView(plan, null));
       return;
     }
-    if (key.leftArrow) { setNav((n) => moveLeft(n, data.columns)); return; }
-    if (key.rightArrow) { setNav((n) => moveRight(n, data.columns)); return; }
-    if (key.upArrow) { setNav((n) => moveUp(n, data.columns)); return; }
-    if (key.downArrow) { setNav((n) => moveDown(n, data.columns)); return; }
+    if (key.leftArrow) {
+      const newNav = moveLeft(nav, data.columns);
+      setNav(newNav);
+      setScrollOffsets((prev) => updateScroll(newNav, prev));
+      return;
+    }
+    if (key.rightArrow) {
+      const newNav = moveRight(nav, data.columns);
+      setNav(newNav);
+      setScrollOffsets((prev) => updateScroll(newNav, prev));
+      return;
+    }
+    if (key.upArrow) {
+      const newNav = moveUp(nav, data.columns);
+      setNav(newNav);
+      setScrollOffsets((prev) => updateScroll(newNav, prev));
+      return;
+    }
+    if (key.downArrow) {
+      const newNav = moveDown(nav, data.columns);
+      setNav(newNav);
+      setScrollOffsets((prev) => updateScroll(newNav, prev));
+      return;
+    }
     if (key.return) {
       const issue = focusedIssue();
       if (issue) {
@@ -152,8 +208,7 @@ export function KanbanApp({ data: initialData, plan, cwd }: KanbanAppProps) {
         sprints={data.allSprints}
         selected={data.sprintName}
         onSelect={(name) => {
-          setData(selectKanbanView(plan ?? { sprints: data.allSprints, backlog: [] }, name));
-          setNav({ colIndex: 0, rowIndex: 0 });
+          resetView(selectKanbanView(plan ?? { sprints: data.allSprints, backlog: [] }, name));
           setShowPicker(false);
         }}
         onCancel={() => setShowPicker(false)}
@@ -181,6 +236,8 @@ export function KanbanApp({ data: initialData, plan, cwd }: KanbanAppProps) {
             issues={data.columns[status]}
             focused={nav.colIndex === colIdx}
             selectedRow={nav.rowIndex}
+            scrollOffset={scrollOffsets[colIdx] ?? 0}
+            maxVisible={maxVisible}
           />
         ))}
       </Box>
@@ -194,7 +251,7 @@ export function KanbanApp({ data: initialData, plan, cwd }: KanbanAppProps) {
 }
 
 export function view(cwd: string): void {
-  const plan = buildPlan(cwd, {});
+  const plan = buildPlan(cwd, { done: true });
   const data = buildKanbanData(plan);
   render(<KanbanApp data={data} plan={plan} cwd={cwd} />);
 }
