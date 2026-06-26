@@ -49,9 +49,9 @@ function Card({ issue, selected }: { issue: IssueView; selected: boolean }) {
         <Text bold dimColor>#{issue.id} </Text>
         <Text color={badge}>[{issue.status}]</Text>
       </Box>
-      <Text wrap="wrap">{issue.title}</Text>
-      {issue.sprint ? <Text dimColor>{issue.sprint}</Text> : null}
-      {indicators ? <Text dimColor>{indicators}</Text> : null}
+      <Text wrap="truncate-end">{issue.title}</Text>
+      <Text dimColor>{issue.sprint ?? " "}</Text>
+      <Text dimColor>{indicators || " "}</Text>
     </Box>
   );
 }

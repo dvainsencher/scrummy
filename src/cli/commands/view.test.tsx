@@ -128,7 +128,6 @@ describe("KanbanApp", () => {
     expect(frame).not.toContain("Issue 1");
     expect(frame).not.toContain("Issue 2");
   });
-});
 
   it("scrolls board when navigating down past the visible window", () => {
     const issues = Array.from({ length: 4 }, (_, i) => ({
@@ -153,6 +152,7 @@ describe("KanbanApp", () => {
     expect(frame).toContain("Issue 3");   // now visible
     expect(frame).not.toContain("Issue 1"); // scrolled past
   });
+});
 
 describe("clampScroll", () => {
   it("returns offset unchanged when rowIndex is within view", () => {
