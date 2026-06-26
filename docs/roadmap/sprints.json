@@ -1,0 +1,65 @@
+[
+  {
+    "name": "foundation",
+    "position": 10,
+    "status": "done",
+    "goal": "a fully working flat-file tracker driven entirely by hand, with no LLM anywhere.",
+    "notes": ""
+  },
+  {
+    "name": "the-reader",
+    "position": 20,
+    "status": "done",
+    "goal": "make reading so good the agent never wants to open a raw file.",
+    "notes": ""
+  },
+  {
+    "name": "agent-skills",
+    "position": 30,
+    "status": "done",
+    "goal": "wire it into Claude Code so a design discussion ends in clean command calls.",
+    "notes": ""
+  },
+  {
+    "name": "smart-ops",
+    "position": 40,
+    "status": "done",
+    "goal": "the token-using layer — the only part that reaches for a model.",
+    "notes": ""
+  },
+  {
+    "name": "install-skills-polish",
+    "position": 50,
+    "status": "done",
+    "goal": "close out two small PR #4 review items and one blank-page-friction fix.",
+    "notes": ""
+  },
+  {
+    "name": "issue-quality",
+    "position": 60,
+    "status": "done",
+    "goal": "stop underspecified issues from being filed silently.",
+    "notes": ""
+  },
+  {
+    "name": "migration-tooling",
+    "position": 70,
+    "status": "done",
+    "goal": "turn the manual migration playbook into something a human can review before and after it runs.",
+    "notes": ""
+  },
+  {
+    "name": "po-persona",
+    "position": 80,
+    "status": "done",
+    "goal": "a single conversational entry point that routes natural requests to the right existing skill.",
+    "notes": ""
+  },
+  {
+    "name": "progress-log",
+    "position": 90,
+    "status": "done",
+    "goal": "give a long-running doing issue a resumable history.",
+    "notes": ""
+  }
+]

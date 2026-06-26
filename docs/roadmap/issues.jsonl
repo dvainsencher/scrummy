@@ -1,0 +1,55 @@
+{"id":1,"title":"scrummy init — scaffold docs/roadmap/","status":"done","sprint":"foundation","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":2,"title":"Decide & document the serialization format (JSONL issues + JSON sprints)","status":"done","sprint":"foundation","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":3,"title":"Define on-disk schema for issue and sprint","status":"done","sprint":"foundation","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":4,"title":"ID allocation — short monotonic integers, stable across edits","status":"done","sprint":"foundation","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":5,"title":"add-issue / edit-issue / remove-issue","status":"done","sprint":"foundation","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":6,"title":"create-sprint / edit-sprint","status":"done","sprint":"foundation","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":7,"title":"move <id> <sprint> and move <id> --backlog","status":"done","sprint":"foundation","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":8,"title":"set-status (issue) and set-sprint-status / set-active (sprint)","status":"done","sprint":"foundation","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":9,"title":"set-position (advisory sort, sparse with gaps of 10)","status":"done","sprint":"foundation","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":10,"title":"spec <id> — create/return specs/<id>.md","status":"done","sprint":"foundation","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":11,"title":"Backlog = issues with empty sprint (filter, not special storage)","status":"done","sprint":"foundation","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":12,"title":"show (pretty) — whole-plan scan: backlog first, then sprints by position","status":"done","sprint":"the-reader","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":13,"title":"show --json — identical content, structured, as agent feed","status":"done","sprint":"the-reader","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":14,"title":"Guarantee pretty and --json render from the same data path","status":"done","sprint":"the-reader","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":15,"title":"Filters: --sprint <name>, --done","status":"done","sprint":"the-reader","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":16,"title":"Mark the active sprint and show it first","status":"done","sprint":"the-reader","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":17,"title":"Distribute the CLI (npm devDependency via git/file URL)","status":"done","sprint":"agent-skills","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":18,"title":"install-skills — copy skills/ into .claude/skills/","status":"done","sprint":"agent-skills","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":19,"title":"Existing vs new project setup documentation","status":"done","sprint":"agent-skills","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":20,"title":"Claude Code skill: scrummy-add-issue","status":"done","sprint":"agent-skills","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":21,"title":"Claude Code skill: scrummy-reorganize","status":"done","sprint":"agent-skills","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":22,"title":"Enforce reader/writer rule in skill instructions","status":"done","sprint":"agent-skills","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":23,"title":"suggest-batches skill","status":"done","sprint":"smart-ops","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":24,"title":"bootstrap skill — read repo code + docs, propose initial issues and sprints","status":"done","sprint":"smart-ops","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":25,"title":"bootstrap for greenfield — docs-only or empty project","status":"done","sprint":"smart-ops","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":26,"title":"Confirmation flow — smart ops propose commands; nothing written until approved","status":"done","sprint":"smart-ops","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":27,"title":"install-skills: friendly error when skills/ source dir is missing","status":"done","sprint":"install-skills-polish","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":28,"title":"install-skills: test for missing-source-dir path","status":"done","sprint":"install-skills-polish","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":29,"title":"spec <id>: scaffold new spec files with fixed-section skeleton","status":"done","sprint":"install-skills-polish","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":30,"title":"scrummy-scratchpad-import skill","status":"done","sprint":"issue-quality","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":31,"title":"scrummy-add-issue: title-length/vagueness heuristic with calibrating question","status":"done","sprint":"issue-quality","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":32,"title":"scrummy-refine skill — shared quality check helper","status":"done","sprint":"issue-quality","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":33,"title":"scrummy-bootstrap: third case for migrating an existing hand-rolled backlog","status":"done","sprint":"migration-tooling","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":34,"title":"CLI batch-import — scrummy import <file> validates + writes all issues at once","status":"done","sprint":"migration-tooling","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":35,"title":"scrummy init: refuse when docs/roadmap/ exists with non-scrummy content","status":"done","sprint":"migration-tooling","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":36,"title":"README/CLAUDE.md template: Adopting scrummy section","status":"done","sprint":"migration-tooling","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":37,"title":"Sprint-structure ambiguity surfaced explicitly in scrummy-migrate","status":"done","sprint":"migration-tooling","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":38,"title":"scrummy-migrate skill — mechanical migration only, fidelity-first","status":"done","sprint":"migration-tooling","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":39,"title":"scrummy-audit skill — migration fidelity audit","status":"done","sprint":"migration-tooling","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":40,"title":"Explicit migrate/refine separation documented","status":"done","sprint":"migration-tooling","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":41,"title":"scrummy-po skill — conversational front door routing to other 8 skills","status":"done","sprint":"po-persona","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":42,"title":"Per-issue progress log — progress.jsonl + log-issue + show-log commands","status":"done","sprint":"progress-log","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":43,"title":"External inspector agent — run from outside a repo, manage its roadmap without coding in it","status":"idea","sprint":"","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":44,"title":"Feature helper mode — discuss/extract features from a project","status":"idea","sprint":"","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":45,"title":"Decide raw-file readability (resolved: JSONL/JSON only, show is the only human view)","status":"done","sprint":"","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":46,"title":"AskUserQuestion degradation — scrummy skills should degrade to plain chat prompts where structured widgets unavailable","status":"idea","sprint":"","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":47,"title":"Issue split/merge/parent-child relationships","status":"idea","sprint":"","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":48,"title":"Staleness queries","status":"idea","sprint":"","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":49,"title":"Issue-level prioritization","status":"idea","sprint":"","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":50,"title":"Mutating commands exit silently on success — add one-line confirmation string","status":"done","sprint":"","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":51,"title":"No --help or bare-invocation usage text","status":"done","sprint":"","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":52,"title":"Installed skill files invoke bare scrummy — switch to npx scrummy","status":"done","sprint":"","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":53,"title":"No single-issue reader — add optional <id> positional to show","status":"done","sprint":"","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":54,"title":"Sprint name mismatches throw hard error — add Did you mean suggestion","status":"done","sprint":"","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
+{"id":55,"title":"Generated ROADMAP.md — every mutating command regenerates ROADMAP.md at root","status":"done","sprint":"","createdAt":"2026-06-26T12:33:34.858Z","updatedAt":"2026-06-26T12:33:34.858Z"}
