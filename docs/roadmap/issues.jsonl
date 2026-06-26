@@ -60,3 +60,5 @@
 {"id":60,"title":"Backlog view and toggle — B key toggles to unsprinted issues view","status":"done","sprint":"terminal-kanban-viewer","createdAt":"2026-06-26T13:12:58.749Z","updatedAt":"2026-06-26T15:47:28.404Z"}
 {"id":61,"title":"Keyboard navigation — arrow keys between cards and columns, Q quit, ? help line","status":"done","sprint":"terminal-kanban-viewer","createdAt":"2026-06-26T13:12:58.785Z","updatedAt":"2026-06-26T15:47:28.660Z"}
 {"id":62,"title":"Card detail panel — Enter expands inline panel with spec rendered as markdown and log entries","status":"done","sprint":"terminal-kanban-viewer","createdAt":"2026-06-26T13:12:58.823Z","updatedAt":"2026-06-26T15:47:28.919Z"}
+{"id":63,"title":"Add shared IssueView test fixture to reduce duplication across kanban viewer tests","status":"idea","sprint":"","createdAt":"2026-06-26T15:53:56.073Z","updatedAt":"2026-06-26T15:53:56.073Z"}
+{"id":64,"title":"Add tests for Q/Esc quit and ? help toggle in KanbanApp (view.test.tsx)","status":"idea","sprint":"","createdAt":"2026-06-26T15:53:56.354Z","updatedAt":"2026-06-26T15:53:56.354Z"}
