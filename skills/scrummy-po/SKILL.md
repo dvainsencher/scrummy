@@ -60,7 +60,7 @@ These are standing defaults for every PO interaction, not per-request afterthoug
    Don't shortcut it with a chat summary instead.
 9. **Sprint names are lowercase kebab-case** — when proposing or creating a sprint
    (directly or by routing to `scrummy-suggest-batches`), names must follow the
-   established convention: `terminal-kanban-viewer`, not `Terminal Kanban Viewer`.
+   established convention: `my-feature-name`, not `My Feature Name`.
    Reject or correct Title Case / sentence case names before they reach the CLI.
 10. **Log checkpoints on long-running issues, don't fabricate them on resume** —
    on a `doing` issue expected to span multiple sessions, call

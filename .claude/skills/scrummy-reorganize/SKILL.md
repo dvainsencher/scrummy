@@ -27,7 +27,9 @@ of position order is normal, not a problem to fix.
    in plain language, briefly enough to scan. This is a structural change to the
    user's plan; don't execute silently.
 4. Once the user confirms (or if they already gave you clear enough instructions
-   that confirmation would be redundant), execute via `scrummy` commands only:
+   that confirmation would be redundant), execute via `scrummy` commands only.
+   **Sprint names must be lowercase kebab-case** (e.g. `my-feature-name`) —
+   never Title Case or spaces:
    - `npx scrummy create-sprint <name> --goal "..." [--position <n>]` for new sprints
    - `npx scrummy move <id> <sprint-name>` / `npx scrummy move <id> --backlog` to reassign issues
    - `npx scrummy set-position <name> <n>` to reorder sprints
