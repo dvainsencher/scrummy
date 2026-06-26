@@ -227,7 +227,7 @@ describe("renderRoadmapMarkdown", () => {
         {
           name: "foundation",
           position: 10,
-          status: "completed",
+          status: "done",
           goal: "",
           notes: "",
           active: false,

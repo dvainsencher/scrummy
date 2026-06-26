@@ -1,4 +1,5 @@
 import { addIssue } from "./commands/addIssue.js";
+import { view } from "./commands/view.js";
 import { createSprint } from "./commands/createSprint.js";
 import { editIssue } from "./commands/editIssue.js";
 import { editSprint } from "./commands/editSprint.js";
@@ -168,6 +169,10 @@ export const commands: Record<string, CommandHandler> = {
   status: (cwd) => status(cwd),
 
   roadmap: (cwd) => roadmap(cwd),
+
+  view: (cwd) => {
+    view(cwd);
+  },
 };
 
 // Commands that change issues or sprints. After any of these runs, ROADMAP.md
@@ -209,4 +214,5 @@ export const commandDescriptions: Record<string, string> = {
   "install-skills": "Install scrummy's Claude Code skills into this project",
   status: "Print a one-line summary of the active sprint",
   roadmap: "Regenerate the human-readable ROADMAP.md from the backlog",
+  view: "Open the terminal kanban viewer",
 };

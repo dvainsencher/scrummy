@@ -153,6 +153,7 @@ scrummy show [--sprint <name>] [--done]      # the human-scannable whole plan
 scrummy show --json                          # same content, structured, for the agent
 scrummy show-log <id>                        # the progress-log entries for one issue, structured, for the agent
 scrummy status                               # one-line summary of the active sprint, e.g. for a shell statusline
+scrummy view                                 # interactive terminal kanban board (Ink TUI)
 ```
 
 Default `show` output:
