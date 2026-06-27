@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Box, Text, render, useInput, useApp, useStdout } from "ink";
 import fs from "node:fs";
 import type { IssueView, Plan } from "../../reader/plan.js";
@@ -12,13 +12,29 @@ import { SprintPicker } from "./sprintPicker.js";
 import { moveLeft, moveRight, moveUp, moveDown, type NavState } from "./navigation.js";
 import { CardDetail } from "./cardDetail.js";
 
-// Worst-case card height: border-top + id/status + title + sprint-name + indicators + border-bottom + marginBottom.
-// Over-estimating here is safe (wastes 1-2 rows on smaller cards); under-estimating causes clampScroll
-// to believe a card is in-view while ink clips it below the terminal edge, breaking scroll-to-selected.
+// Enforced card height: border-top + id/status + title + sprint-name + indicators + border-bottom + marginBottom.
+// The Card Box sets height={CARD_HEIGHT} so the rendered height EQUALS this constant by construction —
+// it is a layout invariant, not an estimate, so maxVisible can never drift from reality (the #66 bug class).
 const CARD_HEIGHT = 7;
 // Non-card rows: title(1) + margin(1) + col-header(3) + footer-margin(1) + footer(1) = 7.
 // The maxVisible formula subtracts 2 more for the up/down scroll indicator lines that appear while scrolling.
 const FIXED_ROWS = 7;
+// Minimum readable column width; below this the board no longer fills the terminal but stays usable.
+const MIN_COL_WIDTH = 16;
+// Horizontal gap between columns (Column marginRight).
+const COLUMN_GAP = 1;
+
+/**
+ * Pure layout derivation from terminal size. Exported for unit testing (like clampScroll).
+ * maxVisible is exact because CARD_HEIGHT is an enforced invariant; columnWidth fills the
+ * terminal width across the four status columns (clamped to MIN_COL_WIDTH on narrow terminals).
+ */
+export function computeLayout(rows: number, cols: number): { maxVisible: number; columnWidth: number; cardWidth: number } {
+  const maxVisible = Math.max(1, Math.floor((rows - FIXED_ROWS - 2) / CARD_HEIGHT));
+  const columnWidth = Math.max(MIN_COL_WIDTH, Math.floor(cols / ISSUE_STATUSES.length) - COLUMN_GAP);
+  const cardWidth = columnWidth - 2;
+  return { maxVisible, columnWidth, cardWidth };
+}
 
 const STATUS_COLORS: Record<IssueStatus, string> = {
   idea: "gray",
@@ -33,7 +49,7 @@ export function clampScroll(offset: number, rowIndex: number, maxVisible: number
   return offset;
 }
 
-function Card({ issue, selected }: { issue: IssueView; selected: boolean }) {
+function Card({ issue, selected, width }: { issue: IssueView; selected: boolean; width: number }) {
   const badge = STATUS_COLORS[issue.status];
   const indicators = [issue.hasSpec ? "S" : "", issue.hasLog ? "L" : ""].filter(Boolean).join(" ");
   return (
@@ -43,15 +59,17 @@ function Card({ issue, selected }: { issue: IssueView; selected: boolean }) {
       borderColor={selected ? "cyan" : undefined}
       paddingX={1}
       marginBottom={1}
-      width={24}
+      width={width}
+      height={CARD_HEIGHT - 1}
+      flexShrink={0}
     >
       <Box>
         <Text bold dimColor>#{issue.id} </Text>
         <Text color={badge}>[{issue.status}]</Text>
       </Box>
       <Text wrap="truncate-end">{issue.title}</Text>
-      <Text dimColor>{issue.sprint || " "}</Text>
-      <Text dimColor>{indicators || " "}</Text>
+      <Text dimColor wrap="truncate-end">{issue.sprint || " "}</Text>
+      <Text dimColor wrap="truncate-end">{indicators || " "}</Text>
     </Box>
   );
 }
@@ -63,6 +81,8 @@ function Column({
   selectedRow,
   scrollOffset,
   maxVisible,
+  columnWidth,
+  cardWidth,
 }: {
   status: IssueStatus;
   issues: IssueView[];
@@ -70,20 +90,22 @@ function Column({
   selectedRow: number;
   scrollOffset: number;
   maxVisible: number;
+  columnWidth: number;
+  cardWidth: number;
 }) {
   const color = STATUS_COLORS[status];
   const visibleIssues = issues.slice(scrollOffset, scrollOffset + maxVisible);
   const hiddenAbove = scrollOffset;
   const hiddenBelow = Math.max(0, issues.length - scrollOffset - maxVisible);
   return (
-    <Box flexDirection="column" width={26} marginRight={1}>
+    <Box flexDirection="column" width={columnWidth} marginRight={COLUMN_GAP} flexShrink={0}>
       <Box borderStyle="single" borderColor={focused ? "cyan" : undefined} paddingX={1}>
         <Text color={color} bold>{status.toUpperCase()}</Text>
         <Text dimColor> ({issues.length})</Text>
       </Box>
       {hiddenAbove > 0 && <Text dimColor>  ↑ {hiddenAbove} more</Text>}
       {visibleIssues.map((issue, i) => (
-        <Card key={issue.id} issue={issue} selected={focused && (i + scrollOffset) === selectedRow} />
+        <Card key={issue.id} issue={issue} selected={focused && (i + scrollOffset) === selectedRow} width={cardWidth} />
       ))}
       {hiddenBelow > 0 && <Text dimColor>  ↓ {hiddenBelow} more</Text>}
     </Box>
@@ -120,9 +142,17 @@ export function KanbanApp({ data: initialData, plan, cwd, maxVisibleCards: maxVi
   const { exit } = useApp();
   const { stdout } = useStdout();
 
-  const terminalRows = stdout?.rows ?? 24;
-  // Subtract 2 extra for the up/down scroll indicators that appear during scrolling.
-  const maxVisible = maxVisibleProp ?? Math.max(1, Math.floor((terminalRows - FIXED_ROWS - 2) / CARD_HEIGHT));
+  // Track terminal size reactively so the board re-flows on resize.
+  const [dims, setDims] = useState({ rows: stdout?.rows ?? 24, cols: stdout?.columns ?? 80 });
+  useEffect(() => {
+    if (!stdout) return;
+    const onResize = () => setDims({ rows: stdout.rows ?? 24, cols: stdout.columns ?? 80 });
+    stdout.on("resize", onResize);
+    return () => { stdout.off("resize", onResize); };
+  }, [stdout]);
+
+  const { maxVisible: layoutMaxVisible, columnWidth, cardWidth } = computeLayout(dims.rows, dims.cols);
+  const maxVisible = maxVisibleProp ?? layoutMaxVisible;
 
   const focusedIssue = (): IssueView | null => {
     const status = ISSUE_STATUSES[nav.colIndex];
@@ -225,8 +255,8 @@ export function KanbanApp({ data: initialData, plan, cwd, maxVisibleCards: maxVi
   }
 
   return (
-    <Box flexDirection="column">
-      <Box marginBottom={1}>
+    <Box flexDirection="column" height={dims.rows} width={dims.cols}>
+      <Box marginBottom={1} flexShrink={0}>
         <Text bold>scrummy kanban</Text>
         {data.sprintName !== null && (
           <>
@@ -236,7 +266,7 @@ export function KanbanApp({ data: initialData, plan, cwd, maxVisibleCards: maxVi
         )}
         {data.sprintName === null && <Text dimColor> — backlog</Text>}
       </Box>
-      <Box flexDirection="row">
+      <Box flexDirection="row" flexGrow={1}>
         {ISSUE_STATUSES.map((status, colIdx) => (
           <Column
             key={status}
@@ -246,10 +276,12 @@ export function KanbanApp({ data: initialData, plan, cwd, maxVisibleCards: maxVi
             selectedRow={nav.rowIndex}
             scrollOffset={scrollOffsets[colIdx] ?? 0}
             maxVisible={maxVisible}
+            columnWidth={columnWidth}
+            cardWidth={cardWidth}
           />
         ))}
       </Box>
-      <Box marginTop={1}>
+      <Box marginTop={1} flexShrink={0}>
         {showHelp
           ? <Text dimColor>{HELP_TEXT}</Text>
           : <Text dimColor>Q quit  S sprints  B backlog  ←→↑↓ navigate  Enter detail  ? help</Text>}
@@ -258,8 +290,15 @@ export function KanbanApp({ data: initialData, plan, cwd, maxVisibleCards: maxVi
   );
 }
 
-export function view(cwd: string): void {
+// The viewer must show the done column, so it always builds the plan with { done: true }.
+// Extracted from view() so the done-inclusion wiring is testable without rendering to a terminal.
+export function buildViewData(cwd: string): { plan: Plan; data: KanbanData } {
   const plan = buildPlan(cwd, { done: true });
   const data = buildKanbanData(plan);
+  return { plan, data };
+}
+
+export function view(cwd: string): void {
+  const { plan, data } = buildViewData(cwd);
   render(<KanbanApp data={data} plan={plan} cwd={cwd} />);
 }

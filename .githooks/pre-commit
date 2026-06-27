@@ -1,0 +1,7 @@
+#!/bin/sh
+# Rebuild the (gitignored) dist/ before every commit so projects that depend on
+# scrummy via a local symlink (e.g. file:../scrummy) always run current compiled
+# code — they all share this one dist/. A failed build aborts the commit.
+#
+# Auto-installed by the "prepare" npm script (git config core.hooksPath .githooks).
+npm run build

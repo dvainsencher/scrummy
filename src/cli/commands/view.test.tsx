@@ -1,11 +1,17 @@
-import { describe, expect, it, beforeAll } from "vitest";
+import { describe, expect, it, beforeAll, beforeEach, afterEach } from "vitest";
 import { render } from "ink-testing-library";
 import { act } from "react";
 import React from "react";
 
 // Required for act() to work in a non-DOM test environment (ink uses react-reconciler)
 beforeAll(() => { (globalThis as Record<string, unknown>).IS_REACT_ACT_ENVIRONMENT = true; });
-import { KanbanApp, clampScroll } from "./view.js";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { KanbanApp, clampScroll, computeLayout, buildViewData } from "./view.js";
+import { init } from "./init.js";
+import { addIssue } from "./addIssue.js";
+import { setStatus } from "./setStatus.js";
 import type { KanbanData } from "./kanban.js";
 
 function makeData(overrides: Partial<KanbanData> = {}): KanbanData {
@@ -164,6 +170,80 @@ describe("KanbanApp", () => {
     const data = makeData({ columns: { idea: issues, ready: [], doing: [], done: [] } });
     const { lastFrame } = render(<KanbanApp data={data} />);
     expect(lastFrame() ?? "").toMatch(/↓.*more/);
+  });
+
+  it("truncates a long title to one line so card height stays fixed (structural CARD_HEIGHT invariant)", () => {
+    // A title longer than the card width must be truncated (wrap="truncate-end"), never wrapped —
+    // otherwise the card grows past CARD_HEIGHT and maxVisible overestimates (#66 root cause).
+    const longTitle = "X".repeat(200);
+    const issue = {
+      id: 1, title: longTitle, status: "idea" as const,
+      sprint: "", createdAt: "", updatedAt: "", hasSpec: false, hasLog: false,
+    };
+    const data = makeData({ columns: { idea: [issue], ready: [], doing: [], done: [] } });
+    const { lastFrame } = render(<KanbanApp data={data} maxVisibleCards={3} />);
+    const frame = lastFrame() ?? "";
+    // The full 200-char title cannot appear: it was truncated to the card width on a single line.
+    expect(frame).not.toContain(longTitle);
+    expect(frame).toContain("X"); // but the (truncated) title is rendered
+  });
+
+  it("truncates a long sprint name to one line (every variable row must be single-line, not just the title)", () => {
+    // Regression: a long sprint name wrapped to 2 lines, overflowing the enforced card
+    // height and clipping the #id/status row. The sprint row must truncate like the title.
+    const longSprint = "Consignacao v2 — reporting & automation and a very long suffix".repeat(3);
+    const issue = {
+      id: 1, title: "Short", status: "idea" as const,
+      sprint: longSprint, createdAt: "", updatedAt: "", hasSpec: false, hasLog: false,
+    };
+    const data = makeData({ sprintName: longSprint, columns: { idea: [issue], ready: [], doing: [], done: [] } });
+    const { lastFrame } = render(<KanbanApp data={data} maxVisibleCards={3} />);
+    const frame = lastFrame() ?? "";
+    expect(frame).toContain("#1");   // id/status row not clipped out by an over-tall card
+    expect(frame).toContain("[idea]");
+  });
+});
+
+describe("computeLayout", () => {
+  it("derives maxVisible from terminal height (exact because CARD_HEIGHT is enforced)", () => {
+    // (rows - FIXED_ROWS(7) - 2) / CARD_HEIGHT(7)
+    expect(computeLayout(24, 120).maxVisible).toBe(2); // floor(15/7)
+    expect(computeLayout(40, 120).maxVisible).toBe(4); // floor(31/7)
+    expect(computeLayout(10, 120).maxVisible).toBe(1); // clamped to >= 1
+  });
+
+  it("fills terminal width across four columns on a wide terminal", () => {
+    const { columnWidth, cardWidth } = computeLayout(40, 120);
+    expect(columnWidth).toBe(29); // floor(120/4) - COLUMN_GAP(1)
+    expect(cardWidth).toBe(27);   // columnWidth - 2 (border)
+  });
+
+  it("clamps to MIN_COL_WIDTH on a narrow terminal", () => {
+    const { columnWidth, cardWidth } = computeLayout(40, 40);
+    expect(columnWidth).toBe(16); // max(MIN_COL_WIDTH=16, floor(40/4)-1=9)
+    expect(cardWidth).toBe(14);
+  });
+});
+
+describe("buildViewData", () => {
+  let cwd: string;
+
+  beforeEach(() => {
+    cwd = fs.mkdtempSync(path.join(os.tmpdir(), "scrummy-view-"));
+    init(cwd);
+  });
+
+  afterEach(() => {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  });
+
+  it("includes done-column issues (view() must pass { done: true } to buildPlan)", () => {
+    // All KanbanApp tests inject mock data and bypass buildPlan, so dropping { done: true }
+    // from view() would go undetected. This drives the real buildPlan+buildKanbanData boundary.
+    const id = addIssue(cwd, "Shipped feature");
+    setStatus(cwd, id, "done");
+    const { data } = buildViewData(cwd);
+    expect(data.columns.done.map((i) => i.id)).toContain(id);
   });
 });
 

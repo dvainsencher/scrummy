@@ -296,6 +296,26 @@ above for what `scrummy-migrate` does and doesn't decide on its own.
 `init`, the CLI, and `install-skills` are all mechanical (no LLM); `scrummy-po` and
 the other Claude Code skills read content and cost tokens.
 
+### Developing scrummy itself
+
+scrummy is written in TypeScript and runs from compiled `dist/` (the published
+`bin`). `dist/` is gitignored and never committed — its freshness is guaranteed by
+package lifecycle scripts so no one ever runs stale compiled code:
+
+- **`prepare`** runs `npm run build` on every install (the repo itself, and git-URL or
+  local `file:` dependents), and auto-installs the git hook below via
+  `git config core.hooksPath .githooks`.
+- **`prepublishOnly`** runs build + typecheck + tests before `npm publish`, so a stale
+  or broken `dist/` can never be published.
+- **`.githooks/pre-commit`** rebuilds `dist/` on every commit. This matters for the
+  local-symlink case: a project depending on scrummy via `file:../scrummy` resolves
+  through a symlink to this repo and runs **this** `dist/`, so one rebuild updates every
+  local dependent at once — but editing source does *not* rebuild on its own.
+
+For live iteration on scrummy without rebuilding, run it from source with
+`npm run dev -- <command>` (tsx). Committed, installed, and published states are all
+guaranteed current by the scripts above.
+
 ---
 
 ## Adopting scrummy where a project already has its own backlog doc
