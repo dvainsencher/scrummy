@@ -23,6 +23,19 @@ function makeData(overrides: Partial<KanbanData> = {}): KanbanData {
   };
 }
 
+// Height (in rows) of the first issue card in the left column: span from its top border
+// (┌ or ╔ when selected) to the next bottom border (└ or ╚). tops[0] is the column header
+// box; tops[1] is the first card. The enforced footprint is CARD_HEIGHT-1 bordered rows.
+function firstCardHeight(frame: string): number {
+  const lines = frame.split("\n");
+  const isTop = (l: string) => /^[┌╔]/.test(l.trimStart());
+  const isBottom = (l: string) => /^[└╚]/.test(l.trimStart());
+  const tops = lines.flatMap((l, i) => (isTop(l) ? [i] : []));
+  const cardTop = tops[1];
+  const cardBottom = lines.findIndex((l, i) => i > cardTop && isBottom(l));
+  return cardBottom - cardTop + 1;
+}
+
 describe("KanbanApp", () => {
   it("renders four status column headers", () => {
     const { lastFrame } = render(<KanbanApp data={makeData()} />);
@@ -186,6 +199,7 @@ describe("KanbanApp", () => {
     // The full 200-char title cannot appear: it was truncated to the card width on a single line.
     expect(frame).not.toContain(longTitle);
     expect(frame).toContain("X"); // but the (truncated) title is rendered
+    expect(firstCardHeight(frame)).toBe(6); // CARD_HEIGHT-1 bordered rows — unchanged by title length
   });
 
   it("truncates a long sprint name to one line (every variable row must be single-line, not just the title)", () => {
@@ -201,6 +215,7 @@ describe("KanbanApp", () => {
     const frame = lastFrame() ?? "";
     expect(frame).toContain("#1");   // id/status row not clipped out by an over-tall card
     expect(frame).toContain("[idea]");
+    expect(firstCardHeight(frame)).toBe(6); // CARD_HEIGHT-1 bordered rows — unchanged by sprint length
   });
 });
 
@@ -209,7 +224,7 @@ describe("computeLayout", () => {
     // (rows - FIXED_ROWS(7) - 2) / CARD_HEIGHT(7)
     expect(computeLayout(24, 120).maxVisible).toBe(2); // floor(15/7)
     expect(computeLayout(40, 120).maxVisible).toBe(4); // floor(31/7)
-    expect(computeLayout(10, 120).maxVisible).toBe(1); // clamped to >= 1
+    expect(computeLayout(10, 120).maxVisible).toBe(1); // raw floor((10-9)/7)=0, clamped up to 1
   });
 
   it("fills terminal width across four columns on a wide terminal", () => {

@@ -12,9 +12,10 @@ import { SprintPicker } from "./sprintPicker.js";
 import { moveLeft, moveRight, moveUp, moveDown, type NavState } from "./navigation.js";
 import { CardDetail } from "./cardDetail.js";
 
-// Enforced card height: border-top + id/status + title + sprint-name + indicators + border-bottom + marginBottom.
-// The Card Box sets height={CARD_HEIGHT} so the rendered height EQUALS this constant by construction —
-// it is a layout invariant, not an estimate, so maxVisible can never drift from reality (the #66 bug class).
+// Enforced total card footprint: border-top + id/status + title + sprint-name + indicators + border-bottom + marginBottom = 7.
+// The Card Box sets height={CARD_HEIGHT - 1} (the 6 bordered rows) plus marginBottom={1}, so the rendered
+// footprint EQUALS CARD_HEIGHT by construction — a layout invariant, not an estimate. Combined with
+// truncate-end on every variable row, maxVisible can never drift from reality (the #66 bug class).
 const CARD_HEIGHT = 7;
 // Non-card rows: title(1) + margin(1) + col-header(3) + footer-margin(1) + footer(1) = 7.
 // The maxVisible formula subtracts 2 more for the up/down scroll indicator lines that appear while scrolling.
