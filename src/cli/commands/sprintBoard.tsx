@@ -146,11 +146,6 @@ export function SprintBoard({
   const maxVisible = maxVisibleCards ?? layoutMaxVisible;
 
   const [nav, setNav] = useState<NavState>(() => {
-    // Start on the selected sprint if it's on the board, else the first non-empty column.
-    for (let c = 0; c < SPRINT_COLUMN_ORDER.length; c++) {
-      const row = columns[SPRINT_COLUMN_ORDER[c]].findIndex((s) => s.name === selected);
-      if (row >= 0) return { colIndex: c, rowIndex: row };
-    }
     const firstNonEmpty = counts.findIndex((n) => n > 0);
     return { colIndex: firstNonEmpty < 0 ? 0 : firstNonEmpty, rowIndex: 0 };
   });

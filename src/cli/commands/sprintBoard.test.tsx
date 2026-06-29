@@ -120,9 +120,9 @@ describe("SprintBoard", () => {
     const { stdin } = render(
       <SprintBoard sprints={sprints} selected={null} rows={big.rows} cols={big.cols} onSelect={onSelect} onCancel={() => {}} />,
     );
-    // Cursor starts on the first non-empty column (active).
+    // Cursor starts on the leftmost card (planned column is first).
     act(() => stdin.write("\r"));
-    expect(onSelect).toHaveBeenCalledWith("active-one");
+    expect(onSelect).toHaveBeenCalledWith("planned-one");
   });
 
   it("moves selection across columns and opens the right sprint", () => {
@@ -130,9 +130,9 @@ describe("SprintBoard", () => {
     const { stdin } = render(
       <SprintBoard sprints={sprints} selected={null} rows={big.rows} cols={big.cols} onSelect={onSelect} onCancel={() => {}} />,
     );
-    act(() => stdin.write("\x1B[C")); // right arrow → planned column
+    act(() => stdin.write("\x1B[C")); // right arrow → active column
     act(() => stdin.write("\r"));
-    expect(onSelect).toHaveBeenCalledWith("planned-one");
+    expect(onSelect).toHaveBeenCalledWith("active-one");
   });
 
   it("shows a cancel hint", () => {
@@ -142,10 +142,11 @@ describe("SprintBoard", () => {
     expect(lastFrame() ?? "").toMatch(/esc/i);
   });
 
-  it("starts the cursor on the currently selected sprint", () => {
+  it("cursor always starts on the leftmost card regardless of selected prop", () => {
     const onSelect = vi.fn();
     const { stdin } = render(
-      <SprintBoard sprints={sprints} selected="planned-one" rows={big.rows} cols={big.cols} onSelect={onSelect} onCancel={() => {}} />,
+      // selected="active-one" is in the second column; cursor should still open on planned-one (col 0).
+      <SprintBoard sprints={sprints} selected="active-one" rows={big.rows} cols={big.cols} onSelect={onSelect} onCancel={() => {}} />,
     );
     act(() => stdin.write("\r"));
     expect(onSelect).toHaveBeenCalledWith("planned-one");

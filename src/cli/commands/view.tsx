@@ -131,7 +131,10 @@ export function KanbanApp({ data: initialData, plan, cwd, maxVisibleCards: maxVi
   const [data, setData] = useState(initialData);
   const [showSprintBoard, setShowSprintBoard] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
-  const [nav, setNav] = useState<NavState>({ colIndex: 0, rowIndex: 0 });
+  const [nav, setNav] = useState<NavState>(() => {
+    const firstNonEmpty = ISSUE_STATUSES.findIndex((s) => (initialData.columns[s]?.length ?? 0) > 0);
+    return { colIndex: firstNonEmpty < 0 ? 0 : firstNonEmpty, rowIndex: 0 };
+  });
   const [scrollOffsets, setScrollOffsets] = useState(initialScrollOffsets ?? ISSUE_STATUSES.map(() => 0));
   const [detail, setDetail] = useState<{ issue: IssueView; spec: string | null; log: ProgressEntry[] } | null>(null);
   const { exit } = useApp();
@@ -163,7 +166,8 @@ export function KanbanApp({ data: initialData, plan, cwd, maxVisibleCards: maxVi
 
   const resetView = (newData: KanbanData) => {
     setData(newData);
-    setNav({ colIndex: 0, rowIndex: 0 });
+    const firstNonEmpty = ISSUE_STATUSES.findIndex((s) => (newData.columns[s]?.length ?? 0) > 0);
+    setNav({ colIndex: firstNonEmpty < 0 ? 0 : firstNonEmpty, rowIndex: 0 });
     setScrollOffsets(ISSUE_STATUSES.map(() => 0));
   };
 

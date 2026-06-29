@@ -9,15 +9,17 @@ export interface NavState {
  * sprint board (3 state columns) both drive it with their own per-column counts.
  */
 export function moveRight(state: NavState, counts: number[]): NavState {
-  const nextCol = Math.min(counts.length - 1, state.colIndex + 1);
-  const maxRow = Math.max(0, (counts[nextCol] ?? 0) - 1);
-  return { colIndex: nextCol, rowIndex: Math.min(state.rowIndex, maxRow) };
+  for (let c = state.colIndex + 1; c < counts.length; c++) {
+    if ((counts[c] ?? 0) > 0) return { colIndex: c, rowIndex: 0 };
+  }
+  return state;
 }
 
 export function moveLeft(state: NavState, counts: number[]): NavState {
-  const nextCol = Math.max(0, state.colIndex - 1);
-  const maxRow = Math.max(0, (counts[nextCol] ?? 0) - 1);
-  return { colIndex: nextCol, rowIndex: Math.min(state.rowIndex, maxRow) };
+  for (let c = state.colIndex - 1; c >= 0; c--) {
+    if ((counts[c] ?? 0) > 0) return { colIndex: c, rowIndex: 0 };
+  }
+  return state;
 }
 
 export function moveDown(state: NavState, counts: number[]): NavState {

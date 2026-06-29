@@ -48,9 +48,39 @@ describe("keyboard navigation", () => {
     expect(moveUp(state, [0, 2, 0, 0]).rowIndex).toBe(0);
   });
 
-  it("moveRight resets rowIndex to 0 when column has fewer cards", () => {
+  it("moveRight always resets rowIndex to 0 on the target column", () => {
     const state: NavState = { colIndex: 1, rowIndex: 2 };
     const next = moveRight(state, [0, 3, 1, 0]);
+    expect(next.colIndex).toBe(2);
+    expect(next.rowIndex).toBe(0);
+  });
+
+  it("moveRight skips empty columns to land on the first non-empty one", () => {
+    // col 1 → col 2 is empty, col 3 has cards
+    const state: NavState = { colIndex: 1, rowIndex: 0 };
+    const next = moveRight(state, [0, 2, 0, 1]);
+    expect(next.colIndex).toBe(3);
+    expect(next.rowIndex).toBe(0);
+  });
+
+  it("moveRight is a no-op when all columns to the right are empty", () => {
+    const state: NavState = { colIndex: 1, rowIndex: 0 };
+    const next = moveRight(state, [0, 2, 0, 0]);
+    expect(next.colIndex).toBe(1);
+    expect(next.rowIndex).toBe(0);
+  });
+
+  it("moveLeft skips empty columns to land on the first non-empty one to the left", () => {
+    // col 3 → col 2 is empty, col 1 has cards
+    const state: NavState = { colIndex: 3, rowIndex: 0 };
+    const next = moveLeft(state, [0, 1, 0, 2]);
+    expect(next.colIndex).toBe(1);
+    expect(next.rowIndex).toBe(0);
+  });
+
+  it("moveLeft is a no-op when all columns to the left are empty", () => {
+    const state: NavState = { colIndex: 2, rowIndex: 0 };
+    const next = moveLeft(state, [0, 0, 3, 1]);
     expect(next.colIndex).toBe(2);
     expect(next.rowIndex).toBe(0);
   });

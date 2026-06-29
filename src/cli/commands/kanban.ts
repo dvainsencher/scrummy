@@ -1,8 +1,8 @@
 import type { IssueStatus, SprintStatus } from "../../domain/types.js";
 import type { IssueView, SprintGroup } from "../../reader/plan.js";
 
-// Column order for the sprint board: in-progress work first, then what's queued, then done.
-export const SPRINT_COLUMN_ORDER: readonly SprintStatus[] = ["active", "planned", "done"];
+// Column order for the sprint board: queued work first, then in-progress, then done.
+export const SPRINT_COLUMN_ORDER: readonly SprintStatus[] = ["planned", "active", "done"];
 
 export type SprintColumns = Record<SprintStatus, SprintGroup[]>;
 
