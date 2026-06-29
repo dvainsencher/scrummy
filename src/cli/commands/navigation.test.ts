@@ -8,7 +8,7 @@ describe("keyboard navigation", () => {
     expect(moveRight(col0, [1, 1, 1, 1]).colIndex).toBe(1);
   });
 
-  it("moveRight clamps at last column", () => {
+  it("moveRight is a no-op when already at the rightmost non-empty column", () => {
     const at3: NavState = { colIndex: 3, rowIndex: 0 };
     expect(moveRight(at3, [1, 1, 1, 1]).colIndex).toBe(3);
   });
@@ -18,7 +18,7 @@ describe("keyboard navigation", () => {
     expect(moveLeft(at2, [1, 1, 1, 1]).colIndex).toBe(1);
   });
 
-  it("moveLeft clamps at column 0", () => {
+  it("moveLeft is a no-op when already at the leftmost non-empty column", () => {
     expect(moveLeft(col0, [1, 1, 1, 1]).colIndex).toBe(0);
   });
 

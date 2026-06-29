@@ -92,6 +92,16 @@ describe("KanbanApp", () => {
     expect(frame).toContain("Shipped");
   });
 
+  it("opens with cursor on leftmost non-empty column, skipping empty columns", () => {
+    // idea is empty; ready has a card — cursor should land on ready (col 1), not idea (col 0).
+    // A selected card renders with a double border (╔). If the cursor defaulted to col 0 (empty),
+    // no card would be selected and no double border would appear in the frame.
+    const issue = { id: 5, title: "Ready card", status: "ready" as const, sprint: "", createdAt: "", updatedAt: "", hasSpec: false, hasLog: false };
+    const data = makeData({ columns: { idea: [], ready: [issue], doing: [], done: [] } });
+    const { lastFrame } = render(<KanbanApp data={data} />);
+    expect(lastFrame() ?? "").toMatch(/╔/);
+  });
+
   it("shows down-scroll indicator when column has more issues than maxVisibleCards", () => {
     const issues = Array.from({ length: 4 }, (_, i) => ({
       id: i + 1, title: `Issue ${i + 1}`, status: "idea" as const,
