@@ -14,14 +14,15 @@ When you work alone or in a tiny group — often *with* an agent — you don't n
 - a way to **batch related work into a chunk an agent can hold in context at once**;
 - the whole plan **viewable at a glance**, in plain files committed next to your code.
 
-That's what this is.
+That's what this is. For the design rationale (the CLI-is-the-only-writer rule,
+file layout, why there's no time-boxing), see [docs/architecture.md](docs/architecture.md).
 
 ---
 
 ## Core concepts
 
 ### Issue
-The atom of work. An issue has:
+The atom of work.
 
 | field | meaning |
 |---|---|
@@ -30,241 +31,33 @@ The atom of work. An issue has:
 | `status` | `idea → ready → doing → done` (lifecycle only) |
 | `sprint` | a sprint name, or empty |
 | spec | optional file at `specs/<id>.md` for detailed write-ups |
-| progress log | optional append-only entries in `progress.jsonl`, for resuming a long-running issue across sessions — see `scrummy log-issue`/`scrummy show-log` below |
+| progress log | optional append-only entries, for resuming a long-running issue across sessions (`scrummy log-issue`/`scrummy show-log`) |
 
-**Empty `sprint` = the backlog.** The backlog is just every issue not assigned to a sprint — a real inbox for raw ideas.
-
-There is deliberately **no dependency field and no within-sprint ordering**. Logical order between issues is the user's concern: write "do this after #42" as prose in the spec. The system doesn't parse, validate, or sort by it.
+**Empty `sprint` = the backlog** — every issue not assigned to a sprint. There's
+deliberately no dependency field and no within-sprint ordering; note ordering as
+prose in the spec instead.
 
 ### Sprint
-A **context batch**: a set of related work sized to fit comfortably in an agent's context — not a time period. A sprint has:
+A **context batch**: a set of related work sized to fit comfortably in an agent's context — not a time period.
 
 | field | meaning |
 |---|---|
 | `name` | how you refer to it ("the export sprint") |
-| `position` | advisory sort order — see below |
+| `position` | advisory sort order |
 | `goal` | what this batch is for |
 | `notes` | optional |
 
-A sprint's **membership is not stored on the sprint** — it's derived by filtering issues whose `sprint` matches. One source of truth, no drift.
-
-**Status is derived too, never stored.** A sprint's `planned → active → done` state is computed from its issues every time it's read, so it can't drift out of sync and there is no command to set it:
-
-| derived status | when |
-|---|---|
-| `planned` | no work started yet — every issue is `idea`/`ready`, or the sprint is empty |
-| `active` | some issue is `doing`/`done` **and** some issue is not `done` (work started, work remaining) |
-| `done` | the sprint has issues and every one of them is `done` |
-
-This is the guardrail: a sprint can't claim to be `done` while it holds an open issue, nor `planned` once work has begun. A sprint *activates* by starting work on its issues (`scrummy set-status <id> doing`) and *completes* when the last one is done. **Several sprints can be active at once** — that's allowed; `scrummy status` reports the lowest-`position` active one as the current focus.
-
-**Order is advisory, not structural.** `position` is just a sort key for display. Plan several sprints ahead (positions 10, 20, 30) and they read as an intended sequence — but the sequence binds nothing. Reorder with a single edit (`set-position export 5`), and nothing renumbers. Activating a sprint out of "order" (work on #11 before #8) is not a transgression because there is no enforced order. Gaps of 10 let you slot a new sprint between two existing ones without touching either.
-
----
-
-## The one architectural rule
-
-**The CLI is the only writer. The LLM reads and decides; it never writes files directly.**
-
-Everything follows from this:
-
-- **Mechanical operations cost zero tokens.** Adding an issue, moving it, creating a sprint — these are file edits. A human runs the command; an agent runs the *same* command. No model call either way.
-- **The agent's job is read → reason → emit commands.** After a design discussion, the agent reads the whole plan, decides where a new issue belongs or how to regroup, and expresses that as a sequence of writer-command calls. The files only ever change through the CLI, so the format stays valid by construction and you never get two-writers drift.
-- **Smart operations sit *above* this line.** They read via the reader, reason, and emit the same writer commands. They get no special file access.
-
-```
-        ┌─────────────────────────────────────────┐
-        │  smart ops (use an LLM, cost tokens)      │
-        │  suggest-batches · bootstrap              │
-        └───────────────┬───────────────┬──────────┘
-                 reads   │               │  writes
-                  via    ▼               ▼  via
-        ┌──────────────────┐   ┌────────────────────────┐
-        │ reader (no LLM)  │   │ writers (no LLM)        │
-        │ show / show --json│   │ add-issue, move, ...     │
-        └──────────────────┘   └───────────┬────────────┘
-                                            │ sole mutators
-                                            ▼
-                              docs/roadmap/  (files in the repo)
-```
-
----
-
-## File layout
-
-```
-docs/roadmap/
-  issues.jsonl     # one issue per line — clean diffs, append-friendly, parse-safe
-  sprints.json     # sprint metadata (name, position, status, goal, notes)
-  progress.jsonl   # append-only progress-log entries, keyed by issueId
-  specs/
-    3.md           # optional, keyed by issue id
-    12.md
-```
-
-> **Resolved** (see `CLAUDE.md`): JSON Lines, not meant to be human-readable on its
-> own — `scrummy show` is the only interactive human-facing view.
-
-Every write also regenerates a `ROADMAP.md` at the project root: a derived,
-human-readable checklist (backlog + one section per sprint, done issues checked
-off) for anyone browsing the repo without running the CLI. It's marked
-`_Generated by scrummy — do not edit by hand_` at the top, regenerated after every
-mutating command, and can be rebuilt on demand with `scrummy roadmap`. It's a
-read-only projection, not a second writer — edits to it are silently
-overwritten on the next mutation.
-
----
-
-## Command surface
-
-`scrummy` (bare) or `scrummy --help` prints this command list with one-line
-descriptions; an unknown command prints an error hinting at `--help`.
-
-### Writers (mechanical · zero tokens · the only mutators)
-
-```
-scrummy init                                 # scaffold docs/roadmap/ in a project (empty issues, sprints, specs/)
-
-scrummy add-issue "<title>" [--status idea|ready] [--sprint <name>]   # prints new id
-scrummy edit-issue <id> [--title "..."] [--status ...]
-scrummy remove-issue <id>
-scrummy import <file>                        # batch-add issues from a JSON array of {title, status?, sprint?}; prints new ids, one per line
-scrummy move <id> <sprint-name>              # assign to a sprint
-scrummy move <id> --backlog                  # send back to the inbox
-scrummy set-status <id> <status>
-
-scrummy create-sprint <name> --goal "..." [--notes "..."] [--position <n>]
-scrummy edit-sprint <name> [--goal "..."] [--notes "..."]
-scrummy remove-sprint <name>                 # only if empty — move issues out first
-scrummy set-position <name> <n>              # advisory sort only
-# Sprint status is derived from its issues — there is no command to set it.
-# A sprint becomes active when you start work on its issues (set-status <id> doing),
-# and done when all of them are done. See "Sprint status" below.
-
-scrummy spec <id>                            # create/return path to specs/<id>.md
-
-scrummy log-issue <id> --type plan|verified|pending "<message>"   # append a progress-log entry for the issue
-
-scrummy install-skills                       # copy the Claude Code skill files into .claude/skills/
-
-scrummy roadmap                               # regenerate ROADMAP.md on demand (also runs automatically after every writer above)
-```
-
-All of the above are implemented (`SPRINTS.md`'s `foundation` and `agent-skills` sprints).
-
-### Reader (the linchpin — rich enough that the agent never opens raw files)
-
-Implemented (`SPRINTS.md`'s `the-reader` sprint). By default, done issues and done
-sprints are hidden — `--done` reveals them. `--sprint <name>` shows only that
-sprint's issues and omits the backlog section.
-
-```
-scrummy show [--sprint <name>] [--done]      # the human-scannable whole plan
-scrummy show --json                          # same content, structured, for the agent
-scrummy show-log <id>                        # the progress-log entries for one issue, structured, for the agent
-scrummy status                               # one-line summary of the active sprint, e.g. for a shell statusline
-scrummy view                                 # interactive terminal kanban board (Ink TUI); press S for the
-                                             #   sprint board — every sprint laid out in ACTIVE | PLANNED | DONE
-                                             #   columns by derived status; Enter drills into a sprint's issues
-```
-
-Default `show` output:
-
-```
-BACKLOG (4)
-  #12  ready  Rework auth token refresh        [spec]
-  #15  idea   Dark mode
-  #18  idea   Export to CSV
-  #21  ready  Rate-limit the public API
-
-▶ SPRINT auth-hardening   (active)
-  goal: close the session/token gaps before launch
-  #3   doing  Rotate signing keys              [spec]  [log]
-  #9   ready  Lock down password reset flow
-  #12  ready  Rework auth token refresh        [spec]
-
-  SPRINT onboarding-polish   (planned)
-  goal: first-run experience feels finished
-  #7   ready  Welcome tour
-  #22  idea   Sample data seeding
-```
-
-The pretty view and the `--json` view render from the same data, so they can't disagree.
-
-`hasSpec`/`hasLog` (the `[spec]`/`[log]` tags above) tell an agent whether an issue
-has a spec file or progress-log entries worth reading before acting — `scrummy spec
-<id>` / `scrummy show-log <id>` for the content itself.
-
-### Smart ops (use an LLM · cost tokens · invoked deliberately)
-
-These are Claude Code skills, not `scrummy` subcommands — `scrummy` itself never calls
-an LLM. The skill reads via `scrummy show --json`, reasons, proposes the plan in
-chat, and on confirmation writes only via the same writer commands a human would
-type.
-
-```
-scrummy-po                     # skill: conversational front door — routes "PO, let's plan the backlog" etc. to the skills below
-scrummy-suggest-batches        # skill: reads the backlog, proposes sprint groupings; you confirm
-scrummy-bootstrap              # skill: reads repo code + docs, proposes an initial set of issues/sprints
-scrummy-migrate                # skill: full-fidelity port of an existing hand-rolled backlog doc, via a reviewable file artifact
-scrummy-audit                  # skill: read-only fidelity check of a completed migration against its approved artifact
-scrummy-scratchpad-import      # skill: reads a messy notes file, files one issue per idea; you confirm
-scrummy-refine                 # skill: checks a candidate or existing issue for clarity/consistency/spec quality
-```
-
-`scrummy-po` is a conversational front door over the other six — same propose-then-
-execute discipline as every other skill here, it just routes by intent ("let's plan
-the backlog," "where are we," "turn my notes into issues") instead of requiring you
-to know which skill to invoke. It never bundles migrate/audit/refine's separate
-approval gates into one step; it can chain them in one sitting (migrate → audit →
-an offer to run refine), but each gate still fires on its own.
-
-`scrummy-bootstrap` works on an existing codebase *or* a greenfield project with only
-docs (or nothing) — and detects a third case, an existing hand-rolled backlog doc
-(`ROADMAP.md`, `docs/sprints.md`, `TODO.md`, ...), handing off to `scrummy-migrate`
-for that one. Unlike the other smart ops, `scrummy-migrate` doesn't propose in chat —
-it writes a markdown mapping table to `docs/roadmap-legacy/_migration-plan.md` for
-you to read and edit directly, and executes only the (possibly edited) file once
-you approve it; ambiguities (possible duplicates, thin notes, which sprint should
-be active) are flagged in the file, never silently resolved — that's
-`scrummy-refine`'s job, run separately afterward. `scrummy-audit` is the third leg of
-the same migration flow: run it after `scrummy-migrate` to mechanically reconcile
-the resulting backlog against the approved artifact (every row produced an issue,
-counts match, nothing silently dropped) — a different question from "is this
-backlog any good," which is `scrummy-refine`'s. `migrate`/`audit`/`refine` are three
-separate, explicitly-invoked actions on purpose, never bundled into one step.
-`scrummy-scratchpad-import` is for unstructured prose with no fixed shape — notes
-jotted for your own future reference, not an existing plan. `scrummy-refine` doesn't
-file or move anything itself; `scrummy-add-issue` and `scrummy-scratchpad-import` both
-call it as a quality check before filing. `scrummy-refine` also has an explicit
-**batch mode** for running over a whole issue set at once (most commonly the
-issues a migration just created) — it asks up front whether you want findings one
-at a time or as a single batched list, and only acts on the decisions you actually
-approve; nothing gets silently merged or edited.
-
----
-
-## Two front-ends, one writer
-
-The same CLI is invoked two ways:
-
-- **By you, by hand** — `scrummy add-issue "..."` at the terminal, or migrating a scratchpad note.
-- **By an agent, via a Claude Code skill** — after a feature discussion, the agent reads `show --json`, reasons, and calls the writer commands. It never edits the files directly.
-
-The capture flows this supports:
-
-- **At the desk:** discuss with the agent → "add this and slot it" → agent emits the right commands.
-- **Away from the desk:** jot into a dumb scratchpad file → later run `add-issue` per note yourself, or hand the scratchpad to the agent and say "import these" (the `scrummy-scratchpad-import` skill). The CLI is the single funnel every note passes through to become a real issue — so you never copy-paste into the roadmap files by hand.
-
-An external inspector agent (looking at a project you're *not* actively coding in) is the same system pointed at the same files from outside — a deployment choice, not a separate architecture.
+A sprint's membership and status are both **derived**, never stored: membership
+is every issue whose `sprint` matches; status is computed from those issues'
+statuses (`planned → active → done`), so it can never drift out of sync. See
+[docs/architecture.md](docs/architecture.md) for the full derivation rules.
 
 ---
 
 ## Install & setup
 
 scrummy isn't published to a registry yet, so a project depends on it as a
-`devDependency` pointed at this repo (git URL or a local path), the same way you'd
-depend on any unpublished package:
+`devDependency` pointed at this repo:
 
 ```jsonc
 // package.json
@@ -282,99 +75,46 @@ npx scrummy init              # scaffold docs/roadmap/ (empty issues, sprints, s
 npx scrummy install-skills    # copy the Claude Code skill files into .claude/skills/
 ```
 
-`install-skills` is mechanical (no LLM) — it copies every skill directory
-(`scrummy-po`, `scrummy-add-issue`, `scrummy-reorganize`, `scrummy-suggest-batches`, `scrummy-bootstrap`,
-`scrummy-migrate`, `scrummy-audit`, `scrummy-scratchpad-import`, `scrummy-refine`) from the installed
-package's own `skills/` directory into the project's `.claude/skills/`,
-overwriting on re-run. Once installed, the skills themselves enforce the one
-rule: read via `scrummy show --json`, write only via `scrummy` commands, never touch
-`docs/roadmap/*` directly.
-
-**Existing project:** `init`, then `install-skills`, then either add issues by hand
-(or via the `scrummy-add-issue` skill during a feature discussion), or ask the agent
-to run the `scrummy-bootstrap` skill to seed a starting plan from your existing code.
-**New project:** same — `init`, `install-skills`, then `scrummy-bootstrap` from
-whatever docs exist (or start empty and add issues as ideas come up).
-
-**Already have a hand-rolled backlog?** (a legacy `ROADMAP.md`/`docs/sprints.md`/
-`TODO.md` setup, possibly living at `docs/roadmap/` itself) Run `install-skills`
-and ask the agent to bootstrap — `scrummy-bootstrap` detects the legacy doc and hands
-off to `scrummy-migrate`, which handles the `docs/roadmap/` rename
-(`git mv docs/roadmap docs/roadmap-legacy` — required before `init`, since `init`
-refuses to run if that directory contains anything other than scrummy's own files)
-and writes a reviewable mapping artifact before filing anything. See "Smart ops"
-above for what `scrummy-migrate` does and doesn't decide on its own.
+- **Existing or new project:** `init`, then `install-skills`, then either add
+  issues by hand or ask the agent to run the `scrummy-bootstrap` skill to seed a
+  starting plan from your code/docs.
+- **Already have a hand-rolled backlog** (`ROADMAP.md`, `docs/sprints.md`,
+  `TODO.md`, ...)? `scrummy-bootstrap` detects it and hands off to
+  `scrummy-migrate`, which ports it with a reviewable mapping artifact — see
+  [docs/adopting.md](docs/adopting.md).
 
 `init`, the CLI, and `install-skills` are all mechanical (no LLM); `scrummy-po` and
 the other Claude Code skills read content and cost tokens.
 
-### Developing scrummy itself
-
-scrummy is written in TypeScript and runs from compiled `dist/` (the published
-`bin`). `dist/` is gitignored and never committed. Freshness is guaranteed without an
-install-time lifecycle script — deliberately, so dependent projects never see an
-`@lavamoat/allow-scripts` warning on `npm install`:
-
-- **`.githooks/pre-commit`** rebuilds `dist/` on every commit. This is what keeps the
-  local-symlink case fresh: a project depending on scrummy via `file:../scrummy`
-  resolves through a symlink to this repo and runs **this** `dist/`, so one rebuild
-  updates every local dependent at once. Editing source does *not* rebuild on its own —
-  for live iteration without committing, run from source with `npm run dev -- <command>`
-  (tsx). The hook is **not** auto-installed; after cloning this repo to work on it, run
-  once: `git config core.hooksPath .githooks`.
-- **`prepublishOnly`** runs build + typecheck + tests before `npm publish`, so a stale
-  or broken `dist/` can never reach the registry, and `files: ["dist/"]` ships the built
-  output in the tarball.
-
-Note: because there is no `prepare` script, installing scrummy directly from a **git
-URL** does not build `dist/` automatically — depend on the published package (or a
-local `file:` checkout you build), not a raw git URL.
-
 ---
 
-## Adopting scrummy where a project already has its own backlog doc
+## Usage
 
-Once `scrummy-migrate` has ported a hand-rolled backlog and `scrummy-audit` has
-confirmed nothing was dropped, the project's own `CLAUDE.md` almost always still
-points at the old doc — a "Roadmap" section, a directive to mark `ROADMAP.md`
-items done before opening a PR, or a custom `/roadmap`-style skill. Replace that
-section with something like:
+```
+scrummy add-issue "Rework auth token refresh"      # prints new id, lands in the backlog
+scrummy create-sprint auth-hardening --goal "close the session/token gaps"
+scrummy move 12 auth-hardening
+scrummy set-status 12 doing
 
-```markdown
-## Roadmap
-
-This project tracks work with `scrummy`, not docs/sprints.md (superseded — see
-`docs/roadmap-legacy/` for historical reference only). `ROADMAP.md` at the root is
-generated by `scrummy` itself after every write — never edit it by hand or mark
-its items `[x]` manually. Run `scrummy show` for the current plan, `scrummy show
---json` for the agent-readable form. Do not use any `/roadmap`-style skill or
-apply a global "sync ROADMAP.md before publishing" directive for this project —
-this section supersedes them.
+scrummy show                 # the human-scannable whole plan
+scrummy show --json          # same content, structured, for an agent
+scrummy status                # one-line summary of the active sprint
+scrummy view                  # interactive terminal kanban board
 ```
 
-Project-level `CLAUDE.md` instructions override global ones, so this section
-alone is enough to redirect any global "sync the roadmap before publishing"
-habit toward `scrummy`'s own writer commands instead. `scrummy-migrate` proposes this
-edit itself once a migration is confirmed clean — see its `SKILL.md` — but it's
-documented here too since it's also the right edit for a project moving off a
-backlog doc by hand, without running `scrummy-migrate` at all.
+Or, in conversation with an agent that has the skills installed: "add this to the
+backlog and slot it into the auth sprint" — the agent reads `show --json`,
+reasons, and calls the same writer commands a human would type.
+
+The full command reference (every writer/reader flag, the smart-op skills, and
+example output) lives in [docs/commands.md](docs/commands.md).
 
 ---
 
-## Status
+## Documentation
 
-`foundation`, `the-reader`, `agent-skills`, `smart-ops`, `install-skills-polish`,
-and `issue-quality` sprints are done — the whole mechanical layer, `show`/
-`show --json`, and the Claude Code skills (including `scrummy-suggest-batches`,
-`scrummy-bootstrap`, `scrummy-scratchpad-import`, and `scrummy-refine`) that drive it.
-
-A second pass of CLI polish is also done (#124–#128): all mutating commands now
-print a confirmation string on success, `scrummy --help` and bare `scrummy` print a
-command list, skill files use `npx scrummy` so they work regardless of PATH, `scrummy
-show <id>` renders a single issue, and sprint-name mismatches include a "Did you
-mean?" suggestion.
-
-#129 is done too: every mutating command also regenerates a human-readable
-`ROADMAP.md` at the project root, and `scrummy roadmap` rebuilds it on demand.
-
-See `SPRINTS.md` for the build plan and what's next.
+- [docs/architecture.md](docs/architecture.md) — the one architectural rule, file layout, why sprints are derived not stored
+- [docs/commands.md](docs/commands.md) — full command reference, including the Claude Code skills ("smart ops")
+- [docs/adopting.md](docs/adopting.md) — moving a project from a hand-rolled backlog doc onto scrummy
+- [docs/developing.md](docs/developing.md) — building and developing scrummy itself
+- [SPRINTS.md](SPRINTS.md) — build plan and current status
