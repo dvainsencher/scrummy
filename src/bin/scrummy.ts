@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { commandDescriptions, commands, roadmapMutatingCommands } from "../cli/registry.js";
 import { buildUsageText } from "../cli/usage.js";
 import { generateRoadmapMarkdown } from "../cli/commands/roadmap.js";
+import { withRoadmapLock } from "../storage/lock.js";
 
 export function isEntryPoint(argv1: string | undefined, moduleUrl: string): boolean {
   if (argv1 === undefined) {
@@ -39,14 +40,22 @@ export function main(io: MainIO): number {
   }
 
   try {
-    const result = handler(io.cwd, rest);
-    if (roadmapMutatingCommands.has(commandName)) {
-      try {
-        generateRoadmapMarkdown(io.cwd);
-      } catch {
-        // best-effort — mutation already committed, don't mask the success
+    // Mutating commands are read → modify → write-whole-file, so two of them overlapping
+    // silently discards one. Serializing here — around the regen too, since that reads the
+    // files back — is the single choke point that covers every command, present and future.
+    const mutating = roadmapMutatingCommands.has(commandName);
+    const runCommand = (): string | void => {
+      const commandResult = handler(io.cwd, rest);
+      if (mutating) {
+        try {
+          generateRoadmapMarkdown(io.cwd);
+        } catch {
+          // best-effort — mutation already committed, don't mask the success
+        }
       }
-    }
+      return commandResult;
+    };
+    const result = mutating ? withRoadmapLock(io.cwd, runCommand) : runCommand();
     if (result !== undefined) {
       io.stdout(`${result}\n`);
     }
