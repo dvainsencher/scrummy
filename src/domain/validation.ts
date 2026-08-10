@@ -77,6 +77,42 @@ export function assertIssueStatus(status: string): void {
   }
 }
 
+// Defense in depth, not the primary safeguard: normal CLI writers can never produce
+// a duplicate id or sprint name (nextId/assertSprintNameAvailable already prevent it
+// at write time). This exists to catch what the write path can't — a bad merge
+// conflict resolution or a manual edit to docs/roadmap/* — independently of how it
+// happened. See CLAUDE.md's "CLI is the only writer" rule and the `validate` command.
+export function assertNoDuplicateIds(issues: Issue[]): void {
+  const counts = new Map<number, number>();
+  for (const issue of issues) {
+    counts.set(issue.id, (counts.get(issue.id) ?? 0) + 1);
+  }
+  const duplicates = [...counts.entries()]
+    .filter(([, count]) => count > 1)
+    .map(([id]) => id)
+    .sort((a, b) => a - b);
+  if (duplicates.length > 0) {
+    throw new Error(
+      `Duplicate issue id(s) found: ${duplicates.map((id) => `#${id}`).join(", ")}. ` +
+        `Each id must be unique — check for a bad merge or manual edit to issues.jsonl.`,
+    );
+  }
+}
+
+export function assertNoDuplicateSprintNames(sprints: Sprint[]): void {
+  const counts = new Map<string, number>();
+  for (const sprint of sprints) {
+    counts.set(sprint.name, (counts.get(sprint.name) ?? 0) + 1);
+  }
+  const duplicates = [...counts.entries()].filter(([, count]) => count > 1).map(([name]) => name);
+  if (duplicates.length > 0) {
+    throw new Error(
+      `Duplicate sprint name(s) found: ${duplicates.join(", ")}. ` +
+        `Each sprint name must be unique — check for a bad merge or manual edit to sprints.json.`,
+    );
+  }
+}
+
 export function assertProgressType(type: string): void {
   if (!PROGRESS_ENTRY_TYPES.includes(type as ProgressEntryType)) {
     throw new Error(
