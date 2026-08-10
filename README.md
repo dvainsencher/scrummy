@@ -86,12 +86,6 @@ npx scrummy install-skills    # copy the Claude Code skill files into .claude/sk
 `init`, the CLI, and `install-skills` are all mechanical (no LLM); `scrummy-po` and
 the other Claude Code skills read content and cost tokens.
 
-**Running from more than one worktree/session at once?** Mutating commands
-sync through a small PR to `origin`'s default branch automatically (needs the
-`gh` CLI, authenticated) — see "Parallel use" in
-[docs/architecture.md](docs/architecture.md) for what that means and the
-`SCRUMMY_NO_SYNC` escape hatch for solo/offline use.
-
 ---
 
 ## Usage
