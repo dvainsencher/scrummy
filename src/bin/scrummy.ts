@@ -4,6 +4,11 @@ import { fileURLToPath } from "node:url";
 import { commandDescriptions, commands, roadmapMutatingCommands } from "../cli/registry.js";
 import { buildUsageText } from "../cli/usage.js";
 import { generateRoadmapMarkdown } from "../cli/commands/roadmap.js";
+import { detectSyncTarget, runWithGitSync } from "../git/sync.js";
+
+// init is exempt from sync: it's the one-time bootstrap of docs/roadmap/ itself,
+// before there's anything for a concurrent session to race against.
+const SYNC_EXEMPT_COMMANDS = new Set(["init"]);
 
 export function isEntryPoint(argv1: string | undefined, moduleUrl: string): boolean {
   if (argv1 === undefined) {
@@ -39,14 +44,23 @@ export function main(io: MainIO): number {
   }
 
   try {
-    const result = handler(io.cwd, rest);
-    if (roadmapMutatingCommands.has(commandName)) {
-      try {
-        generateRoadmapMarkdown(io.cwd);
-      } catch {
-        // best-effort — mutation already committed, don't mask the success
+    const shouldSync = roadmapMutatingCommands.has(commandName) && !SYNC_EXEMPT_COMMANDS.has(commandName);
+    const target = shouldSync ? detectSyncTarget(io.cwd) : undefined;
+
+    let result: string | void;
+    if (target) {
+      result = runWithGitSync(io.cwd, target, commandName, (workDir) => handler(workDir, rest));
+    } else {
+      result = handler(io.cwd, rest);
+      if (roadmapMutatingCommands.has(commandName)) {
+        try {
+          generateRoadmapMarkdown(io.cwd);
+        } catch {
+          // best-effort — mutation already committed, don't mask the success
+        }
       }
     }
+
     if (result !== undefined) {
       io.stdout(`${result}\n`);
     }
