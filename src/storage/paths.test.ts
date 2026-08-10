@@ -1,35 +1,48 @@
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
-  issuesFilePath,
+  issuesDir,
+  legacyIssuesFilePath,
+  legacyProgressFilePath,
+  legacySprintsFilePath,
+  progressDir,
   roadmapDir,
   specFilePath,
   specsDir,
-  sprintsFilePath,
+  sprintsDir,
 } from "./paths.js";
 
 describe("paths", () => {
   const cwd = "/tmp/some-project";
+  const roadmap = path.join(cwd, "docs", "roadmap");
 
   it("resolves the roadmap dir under docs/roadmap", () => {
-    expect(roadmapDir(cwd)).toBe(path.join(cwd, "docs", "roadmap"));
+    expect(roadmapDir(cwd)).toBe(roadmap);
   });
 
-  it("resolves issues.jsonl inside the roadmap dir", () => {
-    expect(issuesFilePath(cwd)).toBe(path.join(cwd, "docs", "roadmap", "issues.jsonl"));
+  it("resolves the issues dir inside the roadmap dir", () => {
+    expect(issuesDir(cwd)).toBe(path.join(roadmap, "issues"));
   });
 
-  it("resolves sprints.json inside the roadmap dir", () => {
-    expect(sprintsFilePath(cwd)).toBe(path.join(cwd, "docs", "roadmap", "sprints.json"));
+  it("resolves the sprints dir inside the roadmap dir", () => {
+    expect(sprintsDir(cwd)).toBe(path.join(roadmap, "sprints"));
+  });
+
+  it("resolves the progress dir inside the roadmap dir", () => {
+    expect(progressDir(cwd)).toBe(path.join(roadmap, "progress"));
   });
 
   it("resolves specs dir inside the roadmap dir", () => {
-    expect(specsDir(cwd)).toBe(path.join(cwd, "docs", "roadmap", "specs"));
+    expect(specsDir(cwd)).toBe(path.join(roadmap, "specs"));
   });
 
   it("resolves a spec file path by issue id", () => {
-    expect(specFilePath(cwd, 12)).toBe(
-      path.join(cwd, "docs", "roadmap", "specs", "12.md"),
-    );
+    expect(specFilePath(cwd, 12)).toBe(path.join(roadmap, "specs", "12.md"));
+  });
+
+  it("still resolves the pre-directory files, which are read until migration", () => {
+    expect(legacyIssuesFilePath(cwd)).toBe(path.join(roadmap, "issues.jsonl"));
+    expect(legacySprintsFilePath(cwd)).toBe(path.join(roadmap, "sprints.json"));
+    expect(legacyProgressFilePath(cwd)).toBe(path.join(roadmap, "progress.jsonl"));
   });
 });

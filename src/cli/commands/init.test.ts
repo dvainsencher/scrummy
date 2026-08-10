@@ -2,8 +2,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { issuesFilePath, specsDir, sprintsFilePath } from "../../storage/paths.js";
-import { readIssues } from "../../storage/issuesStore.js";
+import { issuesDir, specsDir, sprintsDir } from "../../storage/paths.js";
+import { readIssues, writeIssues } from "../../storage/issuesStore.js";
 import { readSprints } from "../../storage/sprintsStore.js";
 import { init } from "./init.js";
 
@@ -18,9 +18,9 @@ describe("init", () => {
     fs.rmSync(cwd, { recursive: true, force: true });
   });
 
-  it("creates an empty issues.jsonl", () => {
+  it("creates an empty issues store", () => {
     init(cwd);
-    expect(fs.existsSync(issuesFilePath(cwd))).toBe(true);
+    expect(fs.statSync(issuesDir(cwd)).isDirectory()).toBe(true);
     expect(readIssues(cwd)).toEqual([]);
   });
 
@@ -28,9 +28,9 @@ describe("init", () => {
     expect(init(cwd)).toBe("Initialized docs/roadmap/");
   });
 
-  it("creates an empty sprints.json ([])", () => {
+  it("creates an empty sprints store", () => {
     init(cwd);
-    expect(fs.existsSync(sprintsFilePath(cwd))).toBe(true);
+    expect(fs.statSync(sprintsDir(cwd)).isDirectory()).toBe(true);
     expect(readSprints(cwd)).toEqual([]);
   });
 
@@ -41,22 +41,39 @@ describe("init", () => {
 
   it("is idempotent — running twice does not error or wipe existing data", () => {
     init(cwd);
-    fs.writeFileSync(issuesFilePath(cwd), `${JSON.stringify({ id: 1 })}\n`);
+    writeIssues(cwd, [
+      {
+        id: 1,
+        title: "kept",
+        status: "idea",
+        sprint: "",
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-01T00:00:00.000Z",
+      },
+    ]);
     init(cwd);
-    expect(fs.readFileSync(issuesFilePath(cwd), "utf8")).toContain('"id":1');
+    expect(readIssues(cwd).map((issue) => issue.title)).toEqual(["kept"]);
   });
 
   it("refuses to init when docs/roadmap/ already exists with non-scrummy content", () => {
     fs.mkdirSync(path.join(cwd, "docs", "roadmap"), { recursive: true });
     fs.writeFileSync(path.join(cwd, "docs", "roadmap", "ROADMAP.md"), "# legacy backlog\n");
     expect(() => init(cwd)).toThrow(/docs\/roadmap-legacy/);
-    expect(fs.existsSync(issuesFilePath(cwd))).toBe(false);
+    expect(fs.existsSync(issuesDir(cwd))).toBe(false);
   });
 
-  it("recovers from an init interrupted after specsDir was created but before issues.jsonl was written", () => {
+  it("accepts a project still on the pre-directory layout", () => {
+    const roadmap = path.join(cwd, "docs", "roadmap");
+    fs.mkdirSync(roadmap, { recursive: true });
+    fs.writeFileSync(path.join(roadmap, "issues.jsonl"), "");
+    fs.writeFileSync(path.join(roadmap, "sprints.json"), "[]\n");
+    expect(() => init(cwd)).not.toThrow();
+  });
+
+  it("recovers from an init interrupted after specsDir was created but before the stores were written", () => {
     fs.mkdirSync(specsDir(cwd), { recursive: true });
     expect(() => init(cwd)).not.toThrow();
-    expect(fs.existsSync(issuesFilePath(cwd))).toBe(true);
+    expect(fs.existsSync(issuesDir(cwd))).toBe(true);
     expect(readIssues(cwd)).toEqual([]);
   });
 });

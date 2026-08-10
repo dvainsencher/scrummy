@@ -94,7 +94,7 @@ export function assertNoDuplicateIds(issues: Issue[]): void {
   if (duplicates.length > 0) {
     throw new Error(
       `Duplicate issue id(s) found: ${duplicates.map((id) => `#${id}`).join(", ")}. ` +
-        `Each id must be unique — check for a bad merge or manual edit to issues.jsonl.`,
+        `Each id must be unique — check for a bad merge or manual edit under docs/roadmap/issues/.`,
     );
   }
 }
@@ -108,7 +108,7 @@ export function assertNoDuplicateSprintNames(sprints: Sprint[]): void {
   if (duplicates.length > 0) {
     throw new Error(
       `Duplicate sprint name(s) found: ${duplicates.join(", ")}. ` +
-        `Each sprint name must be unique — check for a bad merge or manual edit to sprints.json.`,
+        `Each sprint name must be unique — check for a bad merge or manual edit under docs/roadmap/sprints/.`,
     );
   }
 }
@@ -133,7 +133,17 @@ export function assertDirectoryExists(dirPath: string, label: string): void {
   }
 }
 
-const SCRUMMY_OWNED_ROADMAP_ENTRIES = new Set(["issues.jsonl", "sprints.json", "progress.jsonl", "specs"]);
+// Current layout (one directory per record type) plus the pre-directory files, which
+// existing projects still carry until their first write migrates them.
+const SCRUMMY_OWNED_ROADMAP_ENTRIES = new Set([
+  "issues",
+  "sprints",
+  "progress",
+  "specs",
+  "issues.jsonl",
+  "sprints.json",
+  "progress.jsonl",
+]);
 
 export function assertRoadmapDirNotForeign(roadmapDir: string): void {
   if (!existsSync(roadmapDir)) {

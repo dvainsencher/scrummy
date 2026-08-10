@@ -5,6 +5,7 @@ import { commandDescriptions, commands, roadmapMutatingCommands } from "../cli/r
 import { buildUsageText } from "../cli/usage.js";
 import { generateRoadmapMarkdown } from "../cli/commands/roadmap.js";
 import { withRoadmapLock } from "../storage/lock.js";
+import { migrateRoadmapLayout } from "../storage/migrate.js";
 
 export function isEntryPoint(argv1: string | undefined, moduleUrl: string): boolean {
   if (argv1 === undefined) {
@@ -45,6 +46,11 @@ export function main(io: MainIO): number {
     // files back — is the single choke point that covers every command, present and future.
     const mutating = roadmapMutatingCommands.has(commandName);
     const runCommand = (): string | void => {
+      if (mutating) {
+        // Convert a pre-directory layout in one atomic step, under the lock, before any
+        // command touches it. No-op once converted. See storage/migrate.ts.
+        migrateRoadmapLayout(io.cwd);
+      }
       const commandResult = handler(io.cwd, rest);
       if (mutating) {
         try {

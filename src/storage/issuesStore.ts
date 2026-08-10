@@ -1,15 +1,19 @@
 import fs from "node:fs";
-import path from "node:path";
 import type { Issue } from "../domain/types.js";
-import { issuesFilePath } from "./paths.js";
+import { issuesDir, legacyIssuesFilePath } from "./paths.js";
+import { readRecordDir, serializeRecord, syncRecordDir } from "./recordDir.js";
 
-export function readIssues(cwd: string): Issue[] {
-  const filePath = issuesFilePath(cwd);
+const ISSUE_KEYS = ["id", "title", "status", "sprint", "createdAt", "updatedAt"] as const;
+
+function readLegacyIssues(cwd: string): Issue[] {
+  const filePath = legacyIssuesFilePath(cwd);
   if (!fs.existsSync(filePath)) {
     return [];
   }
-  const raw = fs.readFileSync(filePath, "utf8");
-  const lines = raw.split("\n").filter((line) => line.trim().length > 0);
+  const lines = fs
+    .readFileSync(filePath, "utf8")
+    .split("\n")
+    .filter((line) => line.trim().length > 0);
   return lines.map((line, index) => {
     try {
       return JSON.parse(line) as Issue;
@@ -19,11 +23,18 @@ export function readIssues(cwd: string): Issue[] {
   });
 }
 
+export function readIssues(cwd: string): Issue[] {
+  // The directory wins once it exists; writeIssues removes the legacy file as it migrates,
+  // so the two can never both be authoritative.
+  const dir = issuesDir(cwd);
+  const issues = fs.existsSync(dir) ? readRecordDir<Issue>(dir, "issues") : readLegacyIssues(cwd);
+  // Sort by id so callers see a stable order regardless of directory iteration order.
+  // Matches the old append-ordered JSONL, since ids are only ever allocated ascending.
+  return issues.sort((a, b) => a.id - b.id);
+}
+
 export function writeIssues(cwd: string, issues: Issue[]): void {
-  const filePath = issuesFilePath(cwd);
-  const tempPath = path.join(path.dirname(filePath), `.issues.jsonl.${process.pid}.tmp`);
-  const content = issues.map((issue) => JSON.stringify(issue)).join("\n");
-  const trailing = issues.length > 0 ? `${content}\n` : "";
-  fs.writeFileSync(tempPath, trailing);
-  fs.renameSync(tempPath, filePath);
+  const files = new Map(issues.map((issue) => [`${issue.id}.json`, serializeRecord(issue, ISSUE_KEYS)]));
+  syncRecordDir(issuesDir(cwd), files);
+  fs.rmSync(legacyIssuesFilePath(cwd), { force: true });
 }
