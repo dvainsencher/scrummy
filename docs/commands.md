@@ -76,6 +76,20 @@ The pretty view and the `--json` view render from the same data, so they can't d
 has a spec file or progress-log entries worth reading before acting — `scrummy spec
 <id>` / `scrummy show-log <id>` for the content itself.
 
+## Diagnostics
+
+```
+scrummy validate                             # check docs/roadmap/* for invariant violations
+                                             #   (duplicate issue ids, duplicate sprint names) —
+                                             #   exits non-zero and lists what it found
+```
+
+Not a mutator and not part of the normal read/reason/write loop — a standalone
+integrity check. The writers above can never produce a duplicate id or sprint name
+on their own; `validate` exists to catch the cases that bypass them (a bad merge
+conflict resolution, a manual edit to `docs/roadmap/*`) independently of how they
+happened. Safe to run any time, including in CI.
+
 ## Smart ops (use an LLM · cost tokens · invoked deliberately)
 
 These are Claude Code skills, not `scrummy` subcommands — `scrummy` itself never calls

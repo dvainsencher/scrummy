@@ -7,6 +7,8 @@ import {
   assertDirectoryExists,
   assertIssueExists,
   assertIssueStatus,
+  assertNoDuplicateIds,
+  assertNoDuplicateSprintNames,
   assertRoadmapDirNotForeign,
   assertSprintExists,
   assertSprintNameAvailable,
@@ -97,6 +99,44 @@ describe("assertIssueStatus", () => {
 
   it("throws for an invalid status", () => {
     expect(() => assertIssueStatus("bogus")).toThrow(/bogus/);
+  });
+});
+
+describe("assertNoDuplicateIds", () => {
+  it("does not throw when every id is unique", () => {
+    expect(() => assertNoDuplicateIds([issue(1), issue(2), issue(3)])).not.toThrow();
+  });
+
+  it("does not throw for an empty list", () => {
+    expect(() => assertNoDuplicateIds([])).not.toThrow();
+  });
+
+  it("throws listing an id that appears twice", () => {
+    expect(() => assertNoDuplicateIds([issue(1), issue(2), issue(1)])).toThrow(/#1/);
+  });
+
+  it("throws listing every duplicated id, sorted, when several collide", () => {
+    expect(() =>
+      assertNoDuplicateIds([issue(5), issue(2), issue(5), issue(2), issue(3)]),
+    ).toThrow(/#2.*#5|#5.*#2/);
+  });
+});
+
+describe("assertNoDuplicateSprintNames", () => {
+  it("does not throw when every name is unique", () => {
+    expect(() =>
+      assertNoDuplicateSprintNames([sprint("foundation"), sprint("export-flow")]),
+    ).not.toThrow();
+  });
+
+  it("does not throw for an empty list", () => {
+    expect(() => assertNoDuplicateSprintNames([])).not.toThrow();
+  });
+
+  it("throws naming a sprint that appears twice", () => {
+    expect(() =>
+      assertNoDuplicateSprintNames([sprint("foundation"), sprint("foundation")]),
+    ).toThrow(/foundation/);
   });
 });
 

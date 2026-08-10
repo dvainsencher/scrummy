@@ -116,6 +116,12 @@ describe("command registry", () => {
     expect(entries).toMatchObject([{ issueId: 1, type: "plan", message: "investigate root cause" }]);
   });
 
+  it("validate reports OK for a clean backlog", () => {
+    commands.init(cwd, []);
+    commands["add-issue"](cwd, ["Dark mode"]);
+    expect(commands.validate(cwd, [])).toMatch(/^OK: /);
+  });
+
   it("install-skills copies the shipped skills into .claude/skills/", () => {
     commands["install-skills"](cwd, []);
     expect(

@@ -17,6 +17,7 @@ import { show } from "./commands/show.js";
 import { showLog } from "./commands/showLog.js";
 import { spec } from "./commands/spec.js";
 import { status } from "./commands/status.js";
+import { validate } from "./commands/validate.js";
 import { skillsSourceDir } from "../packageRoot.js";
 import { parseArgs, requireIntPositional, requirePositional } from "./parse.js";
 
@@ -153,6 +154,8 @@ export const commands: Record<string, CommandHandler> = {
 
   status: (cwd) => status(cwd),
 
+  validate: (cwd) => validate(cwd),
+
   roadmap: (cwd) => roadmap(cwd),
 
   view: (cwd) => {
@@ -194,6 +197,7 @@ export const commandDescriptions: Record<string, string> = {
   show: "Show the backlog and sprints",
   "install-skills": "Install scrummy's Claude Code skills into this project",
   status: "Print a one-line summary of the active sprint",
+  validate: "Check docs/roadmap/* for invariant violations (e.g. duplicate ids or sprint names)",
   roadmap: "Regenerate the human-readable ROADMAP.md from the backlog",
   view: "Open the terminal kanban viewer",
 };
