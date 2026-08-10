@@ -67,3 +67,5 @@
 {"id":67,"title":"kanban view sprint-selector: does not show sprint status (active/planned/done) — user must enter each sprint to know its state","status":"done","sprint":"kanban-viewer-polish","createdAt":"2026-06-26T17:59:46.687Z","updatedAt":"2026-06-26T18:06:16.749Z"}
 {"id":68,"title":"Add integration test for view() entry point: verify buildPlan({ done: true }) includes done-column issues","status":"done","sprint":"","createdAt":"2026-06-26T20:20:34.468Z","updatedAt":"2026-06-27T16:51:05.227Z"}
 {"id":69,"title":"Derived sprint status + sprint-state board view","status":"done","sprint":"","createdAt":"2026-06-28T21:14:39.306Z","updatedAt":"2026-06-28T21:38:59.320Z"}
+{"id":70,"title":"CardDetail: reset scrollOffset when spec/log props change to prevent stale scroll on reuse","status":"idea","sprint":"","createdAt":"2026-06-29T02:10:40.913Z","updatedAt":"2026-06-29T02:10:40.913Z"}
+{"id":71,"title":"Remove unused `selected` prop from SprintBoard","status":"idea","sprint":"","createdAt":"2026-06-29T06:11:25.927Z","updatedAt":"2026-06-29T06:11:25.927Z"}
