@@ -8,8 +8,8 @@ description: This skill executes a mechanical migration of an existing hand-roll
 This project tracks work with `scrummy`, a flat-file backlog/sprint manager. The one
 rule that matters: **the `scrummy` CLI is the only writer to `docs/roadmap/*`.** You
 read the plan via `npx scrummy show --json` and you write to it only by calling `scrummy`
-commands — never by editing `docs/roadmap/issues.jsonl`, `docs/roadmap/sprints.json`,
-or `docs/roadmap/specs/*.md` directly (spec *content* is the documented exception —
+commands — never by editing anything under `docs/roadmap/`
+(`issues/`, `sprints/`, `progress/`, `specs/*.md`) directly (spec *content* is the documented exception —
 see step 6).
 
 This skill is **mechanical migration only** — full fidelity from the source

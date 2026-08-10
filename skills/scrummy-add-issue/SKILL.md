@@ -8,8 +8,8 @@ description: This skill should be used when, during or after a feature/design di
 This project tracks work with `scrummy`, a flat-file backlog/sprint manager. The one
 rule that matters: **the `scrummy` CLI is the only writer to `docs/roadmap/*`.** You
 read the plan via `npx scrummy show --json` and you write to it only by calling `scrummy`
-commands — never by editing `docs/roadmap/issues.jsonl`, `docs/roadmap/sprints.json`,
-or `docs/roadmap/specs/*.md` directly, even though they're plain files you technically
+commands — never by editing anything under `docs/roadmap/`
+(`issues/`, `sprints/`, `progress/`, `specs/*.md`) directly, even though they're plain files you technically
 could open.
 
 ## Steps
@@ -38,7 +38,7 @@ could open.
    notes, acceptance criteria — run `npx scrummy spec <id>` to create `specs/<id>.md`, then
    write the detail into that file with your normal file-editing tools (the spec
    *content* isn't roadmap metadata, so editing it directly is fine — only
-   `issues.jsonl`/`sprints.json` and spec *creation* go through the CLI).
+   the issue and sprint records, and spec *creation*, go through the CLI).
 6. If the user is describing an issue that already exists but should move sprints,
    use `npx scrummy move <id> <sprint-name>` or `npx scrummy move <id> --backlog` instead of
    adding a duplicate.

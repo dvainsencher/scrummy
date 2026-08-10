@@ -8,8 +8,8 @@ description: This skill should be used as the general conversational front door 
 This project tracks work with `scrummy`, a flat-file backlog/sprint manager. The one
 rule that matters: **the `scrummy` CLI is the only writer to `docs/roadmap/*`.** You
 read the plan via `npx scrummy show --json` and you write to it only by calling `scrummy`
-commands — never by editing `docs/roadmap/issues.jsonl`, `docs/roadmap/sprints.json`,
-or `docs/roadmap/specs/*.md` directly.
+commands — never by editing anything under `docs/roadmap/` (`issues/`, `sprints/`,
+`progress/`, `specs/*.md`) directly.
 
 **This skill is a router/persona layer, not a new code path.** It decides which of
 the other 8 skills applies to what the user is asking for (and, in one case below,

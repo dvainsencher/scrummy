@@ -44,16 +44,26 @@ Everything follows from this:
 
 ```
 docs/roadmap/
-  issues.jsonl     # one issue per line — clean diffs, append-friendly, parse-safe
-  sprints.json     # sprint metadata (name, position, status, goal, notes)
-  progress.jsonl   # append-only progress-log entries, keyed by issueId
+  issues/
+    3.json         # one file per issue, named by id
+    12.json
+  sprints/
+    foundation.json    # one file per sprint, named by a slug of its name
+  progress/
+    3/                 # progress-log entries, one file each, grouped by issue id
+      2026-01-04T09-12-33-041Z-a91c4f2e.json
   specs/
     3.md           # optional, keyed by issue id
     12.md
 ```
 
-> **Resolved** (see `CLAUDE.md`): JSON Lines, not meant to be human-readable on its
-> own — `scrummy show` is the only interactive human-facing view.
+**One file per record, for git's benefit.** See "Parallel use" below — this layout is
+what lets two branches touch the backlog without conflicting. The files are not meant to
+be read directly; `scrummy show` is the human-facing view.
+
+> Projects created before this layout carry `issues.jsonl`, `sprints.json` and
+> `progress.jsonl`. They are still read, and the first mutating command converts them
+> in one atomic step. Nothing is lost and nothing needs to be done by hand.
 
 Every write also regenerates a `ROADMAP.md` at the project root: a derived,
 human-readable checklist (backlog + one section per sprint, done issues checked
@@ -76,6 +86,73 @@ The capture flows this supports:
 - **Away from the desk:** jot into a dumb scratchpad file → later run `add-issue` per note yourself, or hand the scratchpad to the agent and say "import these" (the `scrummy-scratchpad-import` skill). The CLI is the single funnel every note passes through to become a real issue — so you never copy-paste into the roadmap files by hand.
 
 An external inspector agent (looking at a project you're *not* actively coding in) is the same system pointed at the same files from outside — a deployment choice, not a separate architecture.
+
+## Parallel use
+
+The goal is that you never think about scrummy when several sessions are running at once —
+you planning in one or more sessions, agents executing in the same checkout on whatever
+branch they're on. Two mechanisms get that, and neither involves git.
+
+**A lock stops mutations from clobbering each other.** Every mutating command is a
+read → modify → write cycle over the whole store, so two overlapping writers used to
+silently discard one of them. This was not theoretical: a real multi-process race
+(`storage/concurrency.test.ts`) showed 20 concurrent `add-issue` calls leaving **3** issues,
+and 12 `create-sprint` calls leaving **1**. No error, nothing in `git status` to notice.
+`storage/lock.ts` serializes them through an exclusive lockfile, taken once in `main()` for
+every mutating command.
+
+The lockfile lives in the OS temp dir, keyed on the resolved project root — never inside
+the repo, so it cannot be committed and no project needs a `.gitignore` change for it.
+`SCRUMMY_NO_LOCK=1` bypasses it if one ever gets wedged.
+
+**The file layout stops branches from conflicting.** When every record shared one JSONL
+file, git saw unrelated edits as adjacent-line changes and could not tell "two people
+edited different issues" from "two people edited the same one". Measured on real
+three-way merges, before the change: `add-issue` vs `set-status` on the last issue
+**conflicted**, two `create-sprint` calls **conflicted**, `create-sprint` vs `edit-sprint`
+**conflicted**. All false — the operations were independent. That is what you hit every
+time a feature branch merges into a main that moved on.
+
+One file per record makes those merge cleanly, while genuine collisions still conflict:
+
+| Two branches… | Result |
+|---|---|
+| touch different issues, sprints, or progress entries | merges cleanly |
+| add an issue vs. change any other issue | merges cleanly |
+| both add an issue, both allocating the same id | **conflicts** on that one file |
+| both edit the same issue differently | **conflicts** on that one file |
+| both create a sprint with the same name | **conflicts** on that one file |
+
+`storage/mergeBehaviour.test.ts` pins all of this with real `git merge` runs.
+
+The generated root `ROADMAP.md` is a second file both sides touch. It usually merges
+cleanly too, but it can conflict when two changes land on adjacent lines. It is derived,
+so never resolve it by hand — resolve the data, then run `scrummy roadmap` to regenerate it.
+
+### What this does not cover
+
+**Switching branches changes what the backlog shows.** `docs/roadmap/` is versioned data
+living in git, so a branch sees the backlog as of that branch — and a long-lived branch
+can allocate an id that another branch already used. That surfaces as a conflict on one
+small file, and `scrummy validate` detects it after the fact. Removing this limit entirely
+would mean moving the backlog out of the repo, which would cost the thing that makes it
+useful: it travels with the code, and anyone who clones gets it.
+
+### scrummy runs no git commands
+
+Not "prefers not to" — it never shells out at all, and `noGitSurface.test.ts` enforces it.
+
+An earlier attempt at parallel-use safety gave every mutating command a git surface: a
+disposable worktree, `git fetch`, `gh pr create`, `gh pr merge --squash`. It ran inside
+whatever project invoked scrummy, and in one consuming project it opened and auto-merged 5
+unreviewed PRs straight onto that project's production `main`, bypassing its own review
+pipeline; separately it committed a broken machine-specific symlink onto scrummy's own
+`main`. Both were reverted.
+
+The lesson is about blast radius, not about that particular code. A tool consumed as a
+dependency must not reach into the consuming project's repository. Concurrency safety is a
+lockfile and merge safety is the on-disk layout — neither needs a subprocess, so there is
+no reason to have one.
 
 See [commands.md](commands.md) for the full command reference and
 [README.md](../README.md) for a quick overview.

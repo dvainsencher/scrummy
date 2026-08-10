@@ -8,8 +8,8 @@ description: This skill should be used to check whether a candidate or existing 
 This project tracks work with `scrummy`, a flat-file backlog/sprint manager. The one
 rule that matters: **the `scrummy` CLI is the only writer to `docs/roadmap/*`.** You
 read the plan via `npx scrummy show --json` and you write to it only by calling `scrummy`
-commands — never by editing `docs/roadmap/issues.jsonl`, `docs/roadmap/sprints.json`,
-or `docs/roadmap/specs/*.md` directly (spec *content* is the exception — see
+commands — never by editing anything under `docs/roadmap/`
+(`issues/`, `sprints/`, `progress/`, `specs/*.md`) directly (spec *content* is the exception — see
 `scrummy-add-issue`).
 
 This skill doesn't file or move anything itself — it's a quality check, invoked
