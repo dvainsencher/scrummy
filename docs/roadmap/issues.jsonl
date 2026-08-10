@@ -70,4 +70,4 @@
 {"id":70,"title":"CardDetail: reset scrollOffset when spec/log props change to prevent stale scroll on reuse","status":"idea","sprint":"","createdAt":"2026-06-29T02:10:40.913Z","updatedAt":"2026-06-29T02:10:40.913Z"}
 {"id":71,"title":"Remove unused `selected` prop from SprintBoard","status":"idea","sprint":"","createdAt":"2026-06-29T06:11:25.927Z","updatedAt":"2026-06-29T06:11:25.927Z"}
 {"id":72,"title":"scrummy validate command — duplicate id/sprint-name integrity backstop","status":"done","sprint":"","createdAt":"2026-08-10T16:50:11.313Z","updatedAt":"2026-08-10T16:50:16.928Z"}
-{"id":73,"title":"Mandatory git-sync mode for mutating commands (fetch-rebase-retry loop) to enable safe parallel worktree use","status":"ready","sprint":"","createdAt":"2026-08-10T16:50:11.576Z","updatedAt":"2026-08-10T16:50:11.576Z"}
+{"id":73,"title":"Mandatory git-sync mode for mutating commands (fetch-rebase-retry loop) to enable safe parallel worktree use","status":"done","sprint":"","createdAt":"2026-08-10T16:50:11.576Z","updatedAt":"2026-08-10T17:09:44.560Z"}
