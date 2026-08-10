@@ -1,4 +1,8 @@
 .claude/settings.local.json
-node_modules/
+# No trailing slash: a bare "node_modules/" pattern only matches a real directory,
+# not a symlink named node_modules (see incident: a sync worktree's node_modules
+# symlink slipped past the trailing-slash pattern and got committed as a real
+# tracked file — mode 120000 — onto main). This form matches either.
+node_modules
 dist/
 *.swp
