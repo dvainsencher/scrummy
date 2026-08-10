@@ -74,6 +74,36 @@ describe("detectSyncTarget", () => {
       fs.rmSync(noRemote, { recursive: true, force: true });
     }
   });
+
+  it("falls back to a master branch when origin/HEAD has no symbolic ref set", () => {
+    // A clone made with `git clone --no-single-branch` or one whose remote never
+    // reported HEAD can end up without refs/remotes/origin/HEAD — detectSyncTarget
+    // must still find the branch by probing for main/master directly.
+    const bareDir = fs.mkdtempSync(path.join(os.tmpdir(), "scrummy-sync-bare-master-"));
+    fs.rmdirSync(bareDir);
+    git(path.dirname(bareDir), ["init", "--bare", "--initial-branch=master", bareDir]);
+
+    const seedDir = fs.mkdtempSync(path.join(os.tmpdir(), "scrummy-sync-seed-master-"));
+    git(seedDir, ["clone", bareDir, "."]);
+    git(seedDir, ["config", "user.email", "test@example.com"]);
+    git(seedDir, ["config", "user.name", "Test"]);
+    init(seedDir);
+    git(seedDir, ["add", "-A"]);
+    git(seedDir, ["commit", "-m", "seed"]);
+    git(seedDir, ["push", "origin", "master"]);
+
+    const cloneDir = fs.mkdtempSync(path.join(os.tmpdir(), "scrummy-sync-clone-master-"));
+    git(cloneDir, ["clone", bareDir, "."]);
+    // Deliberately do NOT set refs/remotes/origin/HEAD, to exercise the fallback.
+
+    try {
+      expect(detectSyncTarget(cloneDir, { hasGh: () => true })).toEqual({ remote: "origin", branch: "master" });
+    } finally {
+      fs.rmSync(bareDir, { recursive: true, force: true });
+      fs.rmSync(seedDir, { recursive: true, force: true });
+      fs.rmSync(cloneDir, { recursive: true, force: true });
+    }
+  });
 });
 
 describe("runWithGitSync", () => {
@@ -186,5 +216,119 @@ describe("runWithGitSync", () => {
 
     const after = spawnSync("git", ["worktree", "list"], { cwd, encoding: "utf8" }).stdout;
     expect(after.trim().split("\n").length).toBe(before.trim().split("\n").length);
+  });
+
+  it("leaves no local scrummy/* branch behind after exhausting retries", () => {
+    const target = { remote: "origin", branch: "main" };
+    const before = spawnSync("git", ["branch", "--list", "scrummy/*"], { cwd, encoding: "utf8" }).stdout;
+    expect(before.trim()).toBe("");
+
+    expect(() =>
+      runWithGitSync(cwd, target, "add-issue", (workDir) => addIssue(workDir, "Doomed"), () => ({
+        ok: false,
+        error: "simulated permanent failure",
+      })),
+    ).toThrow(GitSyncError);
+
+    const after = spawnSync("git", ["branch", "--list", "scrummy/*"], { cwd, encoding: "utf8" }).stdout;
+    expect(after.trim()).toBe("");
+  });
+
+  it("recovers after two consecutive races, succeeding on the third and final attempt", () => {
+    const target = { remote: "origin", branch: "main" };
+    let landCalls = 0;
+    let fnCalls = 0;
+
+    const land: LandFn = (...args) => {
+      landCalls++;
+      if (landCalls <= 2) {
+        return { ok: false, error: `simulated race #${landCalls}` };
+      }
+      return directPushLand()(...args);
+    };
+
+    const id = runWithGitSync(
+      cwd,
+      target,
+      "add-issue",
+      (workDir) => {
+        fnCalls++;
+        return addIssue(workDir, "Third time's the charm");
+      },
+      land,
+    );
+
+    expect(fnCalls).toBe(3);
+    expect(id).toBe(1); // no rival ever actually landed here — only the land step was faked to fail
+  });
+
+  it("propagates a business-logic error without ever attempting to land, and still cleans up", () => {
+    const target = { remote: "origin", branch: "main" };
+    let landCalls = 0;
+    const land: LandFn = (...args) => {
+      landCalls++;
+      return directPushLand()(...args);
+    };
+    const worktreesBefore = spawnSync("git", ["worktree", "list"], { cwd, encoding: "utf8" }).stdout;
+
+    expect(() =>
+      runWithGitSync(
+        cwd,
+        target,
+        "add-issue",
+        // "missing-sprint" doesn't exist — addIssue throws before writing anything.
+        (workDir) => addIssue(workDir, "x", { sprint: "missing-sprint" }),
+        land,
+      ),
+    ).toThrow(/missing-sprint/);
+
+    expect(landCalls).toBe(0);
+    const worktreesAfter = spawnSync("git", ["worktree", "list"], { cwd, encoding: "utf8" }).stdout;
+    expect(worktreesAfter.trim().split("\n").length).toBe(worktreesBefore.trim().split("\n").length);
+  });
+
+  // This is a regression test for a real bug hit running this feature live: scrummy's
+  // own .githooks/pre-commit runs `npm run build`, which fails in a fresh sync
+  // worktree (no node_modules), which aborted every commit and made every mutating
+  // command fail after burning through all retries. A sync commit only ever touches
+  // docs/roadmap/*+ROADMAP.md — a source-build hook has nothing relevant to check —
+  // so the fix is committing with --no-verify, which this proves actually happens.
+  it("lands successfully even when a pre-commit hook would otherwise reject every commit", () => {
+    const hooksDir = fs.mkdtempSync(path.join(os.tmpdir(), "scrummy-sync-hooks-"));
+    fs.writeFileSync(path.join(hooksDir, "pre-commit"), "#!/bin/sh\nexit 1\n", { mode: 0o755 });
+    git(cwd, ["config", "core.hooksPath", hooksDir]);
+
+    try {
+      const target = { remote: "origin", branch: "main" };
+      const id = runWithGitSync(cwd, target, "add-issue", (workDir) => addIssue(workDir, "Dark mode"), directPushLand());
+      expect(id).toBe(1);
+    } finally {
+      fs.rmSync(hooksDir, { recursive: true, force: true });
+    }
+  });
+
+  it("shares the calling worktree's node_modules with the sync worktree, when present", () => {
+    const fakeModules = path.join(cwd, "node_modules");
+    fs.mkdirSync(fakeModules);
+    fs.writeFileSync(path.join(fakeModules, "marker.txt"), "present");
+
+    try {
+      const target = { remote: "origin", branch: "main" };
+      let sawNodeModules = false;
+      runWithGitSync(
+        cwd,
+        target,
+        "add-issue",
+        (workDir) => {
+          sawNodeModules = fs.existsSync(path.join(workDir, "node_modules", "marker.txt"));
+          return addIssue(workDir, "Dark mode");
+        },
+        directPushLand(),
+      );
+
+      expect(sawNodeModules).toBe(true);
+    } finally {
+      fs.rmSync(fakeModules, { recursive: true, force: true });
+    }
   });
 });
