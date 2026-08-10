@@ -77,46 +77,5 @@ The capture flows this supports:
 
 An external inspector agent (looking at a project you're *not* actively coding in) is the same system pointed at the same files from outside — a deployment choice, not a separate architecture.
 
-## Parallel use — git-sync
-
-The one architectural rule (CLI is the only writer) guarantees the *files* stay
-valid by construction, but it doesn't by itself protect against two writers —
-two agent sessions, two worktrees, a human and an agent — racing on the same
-id or sprint name at once. That's what git-sync closes, and it's mandatory, not
-an opt-in flag: an opt-in step is a step someone eventually forgets to take, and
-the whole point is that you shouldn't have to remember anything.
-
-When a mutating command runs (`add-issue`, `set-status`, `move`, ...) in a repo
-with a `gh`-reachable `origin` remote, it doesn't write `docs/roadmap/*` in place.
-Instead, for each attempt (up to 3):
-
-1. A disposable worktree is fetched fresh from `origin`'s default branch.
-2. The command runs there, against that fresh state — so e.g. `add-issue`'s id is
-   always computed from what's actually on the remote, not from whatever was in
-   your own worktree when you started.
-3. The result is committed and landed as its own small PR (`gh pr create` +
-   `gh pr merge --squash --delete-branch`) — never a direct push to the default
-   branch, which several backing environments block outright regardless.
-4. If landing loses a race (another session's PR merged first), the attempt is
-   discarded and retried from a freshly-fetched state — step 2 runs again, so a
-   second `add-issue` racing the first is guaranteed a different id, not a
-   duplicate. See `src/domain/ids.ts` and the `validate` command, which exists
-   as an independent backstop for anything that still slips through (a manual
-   edit, a bad merge resolution).
-
-The disposable worktree means your own checked-out branch — and any unrelated,
-uncommitted code you're mid-edit on — is never touched. That's what makes this
-safe to call from inside a feature-branch worktree, not just from a dedicated
-"backlog" worktree tracking main.
-
-**When sync doesn't apply** (falls back to today's plain local write, same as
-always): no git repo, no `origin` remote, no `gh` binary found, or the explicit
-`SCRUMMY_NO_SYNC=1` escape hatch for solo/offline use — there's no concurrent
-writer to race against in that case, so the safety property isn't needed. Don't
-reach for the escape hatch in a repo where other sessions might be filing issues
-at the same time; that reintroduces exactly the race this exists to prevent.
-
-See [src/git/sync.ts](../src/git/sync.ts) for the implementation.
-
 See [commands.md](commands.md) for the full command reference and
 [README.md](../README.md) for a quick overview.
