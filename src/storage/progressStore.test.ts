@@ -4,7 +4,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ProgressEntry } from "../domain/types.js";
 import { legacyProgressFilePath, progressDir, roadmapDir } from "./paths.js";
-import { appendProgress, readProgress } from "./progressStore.js";
+import { appendProgress, migrateLegacyProgress, readProgress } from "./progressStore.js";
 
 describe("progressStore", () => {
   let cwd: string;
@@ -122,10 +122,38 @@ describe("progressStore", () => {
       expect(readProgress(cwd)).toContainEqual(third);
     });
 
-    it("prefers the directory once it exists, ignoring a leftover legacy file", () => {
+    it("treats the legacy file as authoritative until it is deleted", () => {
+      seedLegacy([sample, second]);
+      // A half-written migration: directory exists with only part of the log.
+      const dir = path.join(progressDir(cwd), "1");
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, "partial.json"), `${JSON.stringify(sample, null, 2)}\n`);
+
+      expect(readProgress(cwd)).toEqual([sample, second]);
+    });
+
+    // Migrated entries are named by their position in the legacy file, not randomly, so a
+    // re-run after an interrupted migration overwrites rather than duplicating the log.
+    it("does not duplicate entries when re-run after an interrupted migration", () => {
+      seedLegacy([sample, second]);
+      const dir = path.join(progressDir(cwd), "1");
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(
+        path.join(dir, `${sample.createdAt.replace(/[:.]/g, "-")}-0000.json`),
+        `${JSON.stringify(sample, null, 2)}\n`,
+      );
+
+      migrateLegacyProgress(cwd);
+
+      expect(readProgress(cwd)).toHaveLength(2);
+      expect(readProgress(cwd)).toEqual([sample, second]);
+    });
+
+    it("is a no-op once the legacy file is gone", () => {
       appendProgress(cwd, sample);
-      seedLegacy([{ ...sample, message: "stale" }]);
-      expect(readProgress(cwd)).toEqual([sample]);
+      const before = fs.readdirSync(path.join(progressDir(cwd), "1"));
+      migrateLegacyProgress(cwd);
+      expect(fs.readdirSync(path.join(progressDir(cwd), "1"))).toEqual(before);
     });
   });
 });

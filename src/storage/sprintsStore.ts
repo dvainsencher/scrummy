@@ -53,19 +53,32 @@ function readLegacySprints(cwd: string): Sprint[] {
 }
 
 export function readSprints(cwd: string): Sprint[] {
-  const dir = sprintsDir(cwd);
-  const sprints = fs.existsSync(dir)
-    ? readRecordDir<Sprint & { status?: unknown }>(dir, "sprints").map(normalize)
-    : readLegacySprints(cwd);
+  // Legacy file outranks the directory while it exists — see issuesStore.readIssues for
+  // why a partially migrated directory must never be treated as authoritative.
+  const sprints = fs.existsSync(legacySprintsFilePath(cwd))
+    ? readLegacySprints(cwd)
+    : readRecordDir<Sprint & { status?: unknown }>(sprintsDir(cwd), "sprints").map(normalize);
   // Deterministic order. Callers that care sort by position themselves (reader/plan.ts).
   return sprints.sort((a, b) => a.position - b.position || a.name.localeCompare(b.name));
 }
 
 export function writeSprints(cwd: string, sprints: Sprint[]): void {
   const fileNames = sprintFileNames(sprints);
-  const files = new Map(
-    sprints.map((sprint) => [fileNames.get(sprint.name) as string, serializeRecord(normalize(sprint), SPRINT_KEYS)]),
-  );
+  const files = new Map<string, string>();
+  for (const sprint of sprints) {
+    const fileName = fileNames.get(sprint.name) as string;
+    // Same-named sprints collapse onto one file. Before the per-file layout duplicates
+    // survived a write — confusing but lossless — so silently dropping one here would
+    // turn a recoverable merge anomaly into permanent deletion.
+    if (files.has(fileName)) {
+      throw new Error(
+        `Duplicate sprint name "${sprint.name}" — refusing to write, one record would be lost. ` +
+          `Run "scrummy validate" and resolve the duplicate under docs/roadmap/sprints/.`,
+      );
+    }
+    files.set(fileName, serializeRecord(normalize(sprint), SPRINT_KEYS));
+  }
   syncRecordDir(sprintsDir(cwd), files);
+  // Last: removing the legacy file is what marks the migration complete.
   fs.rmSync(legacySprintsFilePath(cwd), { force: true });
 }

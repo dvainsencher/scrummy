@@ -96,15 +96,50 @@ describe("withRoadmapLock", () => {
     expect(fs.existsSync(lockPath)).toBe(true);
   });
 
-  it("takes over a lock whose holder is long gone by age", () => {
-    holdLock({ pid: process.pid, startedAt: Date.now() - 60_000 });
-    expect(withRoadmapLock(dir, () => "took over", { staleMs: 1_000, timeoutMs: 200 })).toBe("took over");
+  // pid 2^22 is above Linux's default pid_max, so it can never be live.
+  const DEAD_PID = 4_194_304;
+
+  it("reclaims a dead holder's lock immediately, without waiting out the age threshold", () => {
+    holdLock({ pid: DEAD_PID, startedAt: Date.now() });
+    expect(withRoadmapLock(dir, () => "took over", { timeoutMs: 200 })).toBe("took over");
   });
 
-  it("takes over a lock whose holder process no longer exists", () => {
-    // pid 2^22 is above Linux's default pid_max, so it can never be live.
-    holdLock({ pid: 4_194_304, startedAt: Date.now() });
+  it("reclaims a dead holder's lock however old it is", () => {
+    holdLock({ pid: DEAD_PID, startedAt: Date.now() - 60_000 });
     expect(withRoadmapLock(dir, () => "took over", { timeoutMs: 200 })).toBe("took over");
+  });
+
+  // Regression: age alone used to declare a lock abandoned, so any command whose work
+  // outlived staleMs had its lock stolen mid-write by a rival — reintroducing the very
+  // lost-update bug the lock exists to prevent. Liveness is authoritative; age is only a
+  // backstop for a pid that has been recycled onto an unrelated process.
+  it("never steals from a live holder just because the lock is old", () => {
+    holdLock({ pid: process.pid, startedAt: Date.now() - 60_000 });
+    expect(() =>
+      withRoadmapLock(dir, () => undefined, { staleMs: 1_000, timeoutMs: 60, retryMs: 5 }),
+    ).toThrow(/Timed out/);
+    expect(fs.existsSync(lockPath)).toBe(true);
+  });
+
+  it("eventually reclaims from a live pid once past the recycled-pid backstop", () => {
+    holdLock({ pid: process.pid, startedAt: Date.now() - 60_000 });
+    expect(
+      withRoadmapLock(dir, () => "took over", { livePidStaleMs: 1_000, timeoutMs: 200 }),
+    ).toBe("took over");
+  });
+
+  // Regression: release used to unlink unconditionally. If this process's lock had been
+  // taken over, that deleted the *new* holder's lock and let a third process in — a
+  // cascade that defeats the lock entirely.
+  it("does not delete a lock that another process has taken over", () => {
+    let stolenRecord = "";
+    withRoadmapLock(dir, () => {
+      // Simulate a rival stealing the lock while we hold it.
+      stolenRecord = JSON.stringify({ pid: DEAD_PID, startedAt: Date.now() });
+      fs.writeFileSync(lockPath, stolenRecord);
+    });
+    expect(fs.existsSync(lockPath)).toBe(true);
+    expect(fs.readFileSync(lockPath, "utf8")).toBe(stolenRecord);
   });
 
   // Regression: openSync(path, "wx") creates an EMPTY file and the record lands a moment

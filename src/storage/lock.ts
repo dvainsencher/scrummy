@@ -16,14 +16,22 @@ import path from "node:path";
 export interface LockOptions {
   /** How long to wait for a held lock before giving up. */
   timeoutMs?: number;
-  /** A lock older than this is treated as abandoned. */
+  /** An *unreadable* lock file older than this is treated as junk. */
   staleMs?: number;
+  /** A lock held by a still-live pid is only reclaimed past this age. See isAbandoned. */
+  livePidStaleMs?: number;
   /** Delay between acquisition attempts. */
   retryMs?: number;
 }
 
 const DEFAULT_TIMEOUT_MS = 5_000;
 const DEFAULT_STALE_MS = 30_000;
+// Deliberately long: a live pid holding the lock is almost certainly the real holder, so
+// this only exists to eventually free a lock whose pid died and was recycled onto an
+// unrelated process. Anything shorter risks evicting a slow-but-healthy holder, which is
+// exactly the lost-update bug the lock exists to prevent. SCRUMMY_NO_LOCK=1 is the
+// escape hatch if one ever genuinely wedges.
+const DEFAULT_LIVE_PID_STALE_MS = 600_000;
 const DEFAULT_RETRY_MS = 20;
 
 interface LockRecord {
@@ -75,7 +83,12 @@ function processIsAlive(pid: number): boolean {
   }
 }
 
-function isAbandoned(lockPath: string, record: LockRecord | undefined, staleMs: number): boolean {
+function isAbandoned(
+  lockPath: string,
+  record: LockRecord | undefined,
+  staleMs: number,
+  livePidStaleMs: number,
+): boolean {
   if (record === undefined) {
     // Either the holder created the file with O_EXCL microseconds ago and hasn't written
     // its record yet, or the file is genuinely corrupt. Contents can't tell these apart —
@@ -90,12 +103,15 @@ function isAbandoned(lockPath: string, record: LockRecord | undefined, staleMs: 
     }
     return Date.now() - mtimeMs > staleMs;
   }
-  if (Date.now() - record.startedAt > staleMs) {
+  // Liveness is authoritative, and it is checked FIRST. Age used to decide this on its
+  // own, which meant any command whose work outlived staleMs had its lock stolen
+  // mid-write by a rival — two concurrent writers, i.e. the lost-update bug this lock
+  // exists to prevent. A dead holder is reclaimed at once; a live one is left alone
+  // until the recycled-pid backstop, which is deliberately long.
+  if (!processIsAlive(record.pid)) {
     return true;
   }
-  // Covers a killed session that never reached its finally block. Guarded by the age check
-  // above, so a recycled pid can at worst delay a takeover, never cause a false one.
-  return !processIsAlive(record.pid);
+  return Date.now() - record.startedAt > livePidStaleMs;
 }
 
 /**
@@ -109,6 +125,7 @@ export function withRoadmapLock<T>(cwd: string, fn: () => T, options: LockOption
 
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const staleMs = options.staleMs ?? DEFAULT_STALE_MS;
+  const livePidStaleMs = options.livePidStaleMs ?? DEFAULT_LIVE_PID_STALE_MS;
   const retryMs = options.retryMs ?? DEFAULT_RETRY_MS;
   const lockPath = lockPathFor(cwd);
   const deadline = Date.now() + timeoutMs;
@@ -124,7 +141,7 @@ export function withRoadmapLock<T>(cwd: string, fn: () => T, options: LockOption
         throw error;
       }
       const record = readRecord(lockPath);
-      if (isAbandoned(lockPath, record, staleMs)) {
+      if (isAbandoned(lockPath, record, staleMs, livePidStaleMs)) {
         // Best-effort steal. If a rival stole it first our next openSync just fails again
         // and we come back through here, so a lost race costs one extra iteration.
         try {
@@ -145,9 +162,9 @@ export function withRoadmapLock<T>(cwd: string, fn: () => T, options: LockOption
     }
   }
 
+  const ourRecord: LockRecord = { pid: process.pid, startedAt: Date.now() };
   try {
-    const record: LockRecord = { pid: process.pid, startedAt: Date.now() };
-    fs.writeSync(handle, JSON.stringify(record));
+    fs.writeSync(handle, JSON.stringify(ourRecord));
     fs.closeSync(handle);
     handle = undefined;
     return fn();
@@ -159,10 +176,25 @@ export function withRoadmapLock<T>(cwd: string, fn: () => T, options: LockOption
         // already closed
       }
     }
-    try {
-      fs.unlinkSync(lockPath);
-    } catch {
-      // already released or stolen after going stale
-    }
+    releaseIfStillOurs(lockPath, ourRecord);
+  }
+}
+
+/**
+ * Remove the lock only if this process still holds it.
+ *
+ * Release used to be an unconditional unlink. If our lock had been reclaimed while we
+ * worked, that deleted the *new* holder's lock and let a third process straight in — one
+ * eviction cascading into unbounded concurrent writers.
+ */
+function releaseIfStillOurs(lockPath: string, ours: LockRecord): void {
+  const current = readRecord(lockPath);
+  if (current === undefined || current.pid !== ours.pid || current.startedAt !== ours.startedAt) {
+    return; // gone, unreadable, or someone else's — not ours to remove
+  }
+  try {
+    fs.unlinkSync(lockPath);
+  } catch {
+    // released concurrently
   }
 }

@@ -121,10 +121,36 @@ describe("issuesStore", () => {
       expect(readIssues(cwd)).toEqual([sample, second, third]);
     });
 
-    it("prefers the directory once it exists, ignoring a leftover legacy file", () => {
-      writeIssues(cwd, [sample]);
-      seedLegacy([{ ...sample, id: 99, title: "stale" }]);
-      expect(readIssues(cwd)).toEqual([sample]);
+    // The legacy file's deletion is the migration's commit point. While it exists the
+    // migration has not completed, so it — not a possibly-partial directory — is the
+    // truth. Without this, a migration interrupted after mkdir but before the last record
+    // was flushed would read back as a truncated backlog, and the next write would delete
+    // the still-intact legacy file, destroying whatever never reached disk.
+    it("treats the legacy file as authoritative until it is deleted", () => {
+      seedLegacy([sample, second]);
+      // A half-written migration: directory exists, holds only some of the records.
+      fs.mkdirSync(issuesDir(cwd), { recursive: true });
+      fs.writeFileSync(path.join(issuesDir(cwd), "1.json"), `${JSON.stringify(sample, null, 2)}\n`);
+
+      expect(readIssues(cwd)).toEqual([sample, second]);
     });
+
+    it("loses nothing when a half-finished migration is completed by a later write", () => {
+      seedLegacy([sample, second]);
+      fs.mkdirSync(issuesDir(cwd), { recursive: true });
+      fs.writeFileSync(path.join(issuesDir(cwd), "1.json"), `${JSON.stringify(sample, null, 2)}\n`);
+
+      writeIssues(cwd, readIssues(cwd));
+
+      expect(fs.existsSync(legacyIssuesFilePath(cwd))).toBe(false);
+      expect(readIssues(cwd)).toEqual([sample, second]);
+    });
+  });
+
+  // Two records sharing an id map to one filename, so a Map keyed on it would silently
+  // drop one. Duplicate ids can only arrive out-of-band (a bad merge resolution), and
+  // losing one on the next write is worse than refusing to write.
+  it("refuses to write duplicate ids rather than silently dropping one", () => {
+    expect(() => writeIssues(cwd, [sample, { ...sample, title: "collides" }])).toThrow(/#1/);
   });
 });

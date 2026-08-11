@@ -135,13 +135,28 @@ describe("sprintsStore", () => {
       expect(readSprints(cwd)).toEqual([sample, added]);
     });
 
-    it("prefers the directory once it exists, ignoring a leftover legacy file", () => {
-      writeSprints(cwd, [sample]);
+    // See issuesStore.test.ts: the legacy file's deletion is the migration's commit point,
+    // so a possibly-partial directory never outranks it.
+    it("treats the legacy file as authoritative until it is deleted", () => {
+      const other: Sprint = { ...sample, name: "second", position: 20 };
+      fs.writeFileSync(legacySprintsFilePath(cwd), `${JSON.stringify([sample, other], null, 2)}\n`);
+      fs.mkdirSync(sprintsDir(cwd), { recursive: true });
       fs.writeFileSync(
-        legacySprintsFilePath(cwd),
-        `${JSON.stringify([{ ...sample, name: "stale" }], null, 2)}\n`,
+        path.join(sprintsDir(cwd), "foundation.json"),
+        `${JSON.stringify(sample, null, 2)}\n`,
       );
-      expect(readSprints(cwd)).toEqual([sample]);
+
+      expect(readSprints(cwd)).toEqual([sample, other]);
     });
+  });
+
+  // Two sprints sharing a name map to one filename, so a Map keyed on it would silently
+  // drop one. Before the per-file layout duplicates survived a write — confusing but
+  // lossless — so collapsing them here would turn a recoverable merge anomaly into
+  // permanent deletion.
+  it("refuses to write duplicate sprint names rather than silently dropping one", () => {
+    expect(() => writeSprints(cwd, [sample, { ...sample, goal: "collides" }])).toThrow(
+      /foundation/,
+    );
   });
 });

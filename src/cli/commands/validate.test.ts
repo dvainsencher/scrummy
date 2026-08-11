@@ -33,21 +33,25 @@ describe("validate", () => {
     expect(validate(cwd)).toBe("OK: 2 issue(s), 1 sprint(s), no duplicates found");
   });
 
-  // The record's identity is now its filename, so the write path cannot express a
-  // duplicate at all — two records with one id are one file.
-  it("cannot be made to write a duplicate id through the store", () => {
+  // The record's identity is now its filename, so two records with one id would be one
+  // file. The store refuses rather than letting the second silently overwrite the first.
+  it("refuses to write a duplicate id rather than dropping a record", () => {
     const a = addIssue(cwd, "Dark mode");
     const issues = readIssues(cwd);
-    writeIssues(cwd, [...issues, { ...issues[0], id: a, title: "Duplicate of #1" }]);
+
+    expect(() => writeIssues(cwd, [...issues, { ...issues[0], id: a, title: "Duplicate of #1" }])).toThrow(
+      new RegExp(`#${a}`),
+    );
 
     expect(readIssues(cwd)).toHaveLength(1);
     expect(validate(cwd)).toContain("no duplicates found");
   });
 
-  it("cannot be made to write a duplicate sprint name through the store", () => {
+  it("refuses to write a duplicate sprint name rather than dropping a record", () => {
     createSprint(cwd, "foundation", { goal: "g" });
     const sprints = readSprints(cwd);
-    writeSprints(cwd, [...sprints, { ...sprints[0] }]);
+
+    expect(() => writeSprints(cwd, [...sprints, { ...sprints[0] }])).toThrow(/foundation/);
 
     expect(readSprints(cwd)).toHaveLength(1);
     expect(validate(cwd)).toContain("no duplicates found");
