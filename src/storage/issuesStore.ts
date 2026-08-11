@@ -29,6 +29,11 @@ export function readIssues(cwd: string): Issue[] {
   // and the directory may hold only some of the records. Trusting a half-written directory
   // would report a truncated backlog as the whole truth — and the next write would then
   // delete the still-intact legacy file, destroying whatever never reached disk.
+  //
+  // Caveat: nothing recreates a legacy file once deleted, so this is only wrong if someone
+  // restores an old one by hand into an already-migrated project — in which case the stale
+  // content wins and syncRecordDir prunes the records missing from it. Delete the restored
+  // legacy file rather than letting a mutating command consume it.
   const issues = fs.existsSync(legacyIssuesFilePath(cwd))
     ? readLegacyIssues(cwd)
     : readRecordDir<Issue>(issuesDir(cwd), "issues");
@@ -45,9 +50,16 @@ export function writeIssues(cwd: string, issues: Issue[]): void {
     // Duplicates can only arrive out-of-band (a bad merge resolution); refusing to write
     // keeps them recoverable instead of deleting one on the next mutation.
     if (files.has(fileName)) {
+      // Name the file the duplicate actually lives in. Before migration that is still the
+      // legacy JSONL, and pointing at the directory would send the user to a path that
+      // does not exist yet — with every mutating command blocked until they fix it, since
+      // the migration runs before each one.
+      const location = fs.existsSync(legacyIssuesFilePath(cwd))
+        ? "docs/roadmap/issues.jsonl"
+        : "docs/roadmap/issues/";
       throw new Error(
         `Duplicate issue id #${issue.id} — refusing to write, one record would be lost. ` +
-          `Run "scrummy validate" and resolve the duplicate under docs/roadmap/issues/.`,
+          `Remove the duplicate in ${location}, then re-run. "scrummy validate" lists them.`,
       );
     }
     files.set(fileName, serializeRecord(issue, ISSUE_KEYS));

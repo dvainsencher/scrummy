@@ -153,4 +153,22 @@ describe("issuesStore", () => {
   it("refuses to write duplicate ids rather than silently dropping one", () => {
     expect(() => writeIssues(cwd, [sample, { ...sample, title: "collides" }])).toThrow(/#1/);
   });
+
+  it("does not write anything when it refuses a duplicate", () => {
+    writeIssues(cwd, [sample]);
+    const before = fs.readdirSync(issuesDir(cwd));
+    expect(() => writeIssues(cwd, [sample, { ...sample, title: "collides" }])).toThrow();
+    expect(fs.readdirSync(issuesDir(cwd))).toEqual(before);
+  });
+
+  // The migration runs before every mutating command, so duplicates still sitting in a
+  // legacy file block all of them. Pointing at the directory would send the user to a
+  // path that does not exist yet.
+  it("names the legacy file when the duplicate is still there", () => {
+    fs.writeFileSync(
+      legacyIssuesFilePath(cwd),
+      `${JSON.stringify(sample)}\n${JSON.stringify({ ...sample, title: "collides" })}\n`,
+    );
+    expect(() => writeIssues(cwd, readIssues(cwd))).toThrow(/docs\/roadmap\/issues\.jsonl/);
+  });
 });

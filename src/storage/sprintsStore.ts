@@ -71,9 +71,14 @@ export function writeSprints(cwd: string, sprints: Sprint[]): void {
     // survived a write — confusing but lossless — so silently dropping one here would
     // turn a recoverable merge anomaly into permanent deletion.
     if (files.has(fileName)) {
+      // See issuesStore.writeIssues: name the file the duplicate is actually in, which
+      // before migration is still the legacy JSON.
+      const location = fs.existsSync(legacySprintsFilePath(cwd))
+        ? "docs/roadmap/sprints.json"
+        : "docs/roadmap/sprints/";
       throw new Error(
         `Duplicate sprint name "${sprint.name}" — refusing to write, one record would be lost. ` +
-          `Run "scrummy validate" and resolve the duplicate under docs/roadmap/sprints/.`,
+          `Remove the duplicate in ${location}, then re-run. "scrummy validate" lists them.`,
       );
     }
     files.set(fileName, serializeRecord(normalize(sprint), SPRINT_KEYS));
