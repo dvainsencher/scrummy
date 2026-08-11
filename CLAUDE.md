@@ -18,9 +18,18 @@ through the CLI.
 - **Language/runtime**: Node/TypeScript.
 - **CLI command name**: `scrummy` (the README's "roadmap" is the working name from the
   original design doc — the project and command are both `scrummy`).
-- **On-disk format**: JSONL (`issues.jsonl`) + JSON (`sprints.json`) only. The raw files
-  are not meant to be human-readable on their own — `scrummy show` is the only
+- **On-disk format**: one JSON file per record — `issues/<id>.json`,
+  `sprints/<slug>.json`, `progress/<id>/<stamp>.json`, alongside `specs/<id>.md`. The raw
+  files are not meant to be human-readable on their own — `scrummy show` is the only
   human-facing view. This resolves README's open decision and backlog issue #104.
+  (Superseded the original `issues.jsonl` + `sprints.json`, which made git treat unrelated
+  edits as conflicting — see `docs/architecture.md` § Parallel use. Legacy files are read
+  and converted automatically.)
+- **scrummy never runs git, `gh`, or any subprocess.** Enforced by
+  `src/noGitSurface.test.ts`. A tool consumed as a dependency must not reach into the
+  consuming project's repository; a previous version did and auto-merged unreviewed PRs
+  onto another project's `main`. Concurrency safety is a lockfile (`storage/lock.ts`) and
+  merge safety is the on-disk layout — neither needs a subprocess.
 - **Distribution**: per-project install only (no global mode). `scrummy init` scaffolds
   `docs/roadmap/` inside each project; CLI and skill files are installed per-project.
 

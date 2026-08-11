@@ -8,8 +8,8 @@ description: This skill should be used when the user wants help turning a messy 
 This project tracks work with `scrummy`, a flat-file backlog/sprint manager. The one
 rule that matters: **the `scrummy` CLI is the only writer to `docs/roadmap/*`.** You
 read the plan via `npx scrummy show --json` and you write to it only by calling `scrummy`
-commands — never by editing `docs/roadmap/issues.jsonl`, `docs/roadmap/sprints.json`,
-or `docs/roadmap/specs/*.md` directly.
+commands — never by editing anything under `docs/roadmap/` (`issues/`, `sprints/`,
+`progress/`, `specs/*.md`) directly.
 
 Unlike `scrummy-reorganize` (which acts on a regrouping the user already has in mind),
 this skill's job is to generate the grouping proposal itself, from backlog issues

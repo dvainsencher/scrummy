@@ -90,6 +90,18 @@ on their own; `validate` exists to catch the cases that bypass them (a bad merge
 conflict resolution, a manual edit to `docs/roadmap/*`) independently of how they
 happened. Safe to run any time, including in CI.
 
+## Environment variables
+
+```
+SCRUMMY_NO_LOCK=1                            # skip the mutation lock entirely
+```
+
+Mutating commands take an exclusive lock so that concurrent sessions cannot clobber
+each other's writes (see [architecture.md](architecture.md) § Parallel use). The lock
+file lives in the OS temp dir, never in the repo. Set `SCRUMMY_NO_LOCK=1` only to get
+past a lock left behind by a process that died in a way the staleness check didn't
+catch — normal use should never need it.
+
 ## Smart ops (use an LLM · cost tokens · invoked deliberately)
 
 These are Claude Code skills, not `scrummy` subcommands — `scrummy` itself never calls

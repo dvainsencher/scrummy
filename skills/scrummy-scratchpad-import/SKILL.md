@@ -8,8 +8,8 @@ description: This skill should be used when the user has a messy notes/scratchpa
 This project tracks work with `scrummy`, a flat-file backlog/sprint manager. The one
 rule that matters: **the `scrummy` CLI is the only writer to `docs/roadmap/*`.** You
 read the plan via `npx scrummy show --json` and you write to it only by calling `scrummy`
-commands — never by editing `docs/roadmap/issues.jsonl`, `docs/roadmap/sprints.json`,
-or `docs/roadmap/specs/*.md` directly, even though they're plain files you technically
+commands — never by editing anything under `docs/roadmap/`
+(`issues/`, `sprints/`, `progress/`, `specs/*.md`) directly, even though they're plain files you technically
 could open. (Spec *content* is the documented exception — see step 4.)
 
 Unlike `scrummy-bootstrap` (seeds a plan from existing code/docs) and
