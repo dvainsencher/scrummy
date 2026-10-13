@@ -56,7 +56,7 @@ export function lockPathFor(cwd: string): string {
 
 // Synchronous sleep. The whole CLI is synchronous, so yielding to the event loop here
 // would mean restructuring every command handler for no benefit.
-function sleepSync(ms: number): void {
+export function sleepSync(ms: number): void {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 }
 

@@ -1,10 +1,10 @@
 #!/usr/bin/env node
-import { realpathSync } from "node:fs";
+import { realpathSync, writeSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { commandDescriptions, commands, isMutating, localCwdCommands } from "../cli/registry.js";
 import { buildUsageText } from "../cli/usage.js";
 import { generateRoadmapMarkdown } from "../cli/commands/roadmap.js";
-import { withRoadmapLock } from "../storage/lock.js";
+import { sleepSync, withRoadmapLock } from "../storage/lock.js";
 import { migrateRoadmapLayout } from "../storage/migrate.js";
 import { assertCanonicalBranch, resolveRoadmapRoot } from "../storage/root.js";
 
@@ -24,6 +24,8 @@ export interface MainIO {
   cwd: string;
   stdout: (text: string) => void;
   stderr: (text: string) => void;
+  /** Synchronous stdout for commands that stream forever; throws when the reader is gone. */
+  write?: (text: string) => void;
 }
 
 export function main(io: MainIO): number {
@@ -64,7 +66,7 @@ export function main(io: MainIO): number {
         // command touches it. No-op once converted. See storage/migrate.ts.
         migrateRoadmapLayout(commandCwd);
       }
-      const commandResult = handler(commandCwd, rest, { localCwd: io.cwd, env: process.env });
+      const commandResult = handler(commandCwd, rest, { localCwd: io.cwd, env: process.env, write: io.write ?? io.stdout });
       if (mutating) {
         try {
           generateRoadmapMarkdown(commandCwd);
@@ -86,11 +88,27 @@ export function main(io: MainIO): number {
   }
 }
 
+// `watch` never yields to the event loop, so a closed pipe (EPIPE) would never be reported
+// through process.stdout. Writing synchronously makes it throw, which ends the command.
+export function writeStdoutSync(text: string): void {
+  const buffer = Buffer.from(text);
+  let offset = 0;
+  while (offset < buffer.length) {
+    try {
+      offset += writeSync(1, buffer, offset);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "EAGAIN") throw error;
+      sleepSync(5); // non-blocking pipe is full; wait for the reader
+    }
+  }
+}
+
 if (isEntryPoint(process.argv[1], import.meta.url)) {
   process.exitCode = main({
     argv: process.argv.slice(2),
     cwd: process.cwd(),
     stdout: (text) => process.stdout.write(text),
     stderr: (text) => process.stderr.write(text),
+    write: writeStdoutSync,
   });
 }

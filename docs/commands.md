@@ -58,6 +58,41 @@ position, then the backlog; within each by id. It exits non-zero when nothing is
 `show`, `show --json` and the viewer display the assignee (`@name`) and flag an expired
 lease; `validate` prints a `WARN` line for each expired claim without failing.
 
+## Watching for changes
+
+```
+scrummy watch [--json] [--interval <ms>]     # stream changes other processes make; runs until stopped
+```
+
+Long-running and read-only. It watches the resolved roadmap root, so it sees changes from
+every worktree. With `--json` it prints one JSON object per line (NDJSON), which is what
+an agent wants: run it with Claude Code's `Monitor` tool and react to each line. Without
+it, one readable line per event. Events:
+
+| type | when | fields |
+|---|---|---|
+| `issue.added` / `issue.removed` | an issue appears / disappears | `id`, `title` (`status` on added) |
+| `issue.changed` | title, status or sprint changed | `id`, `title`, `changes: {field: {from, to}}` |
+| `sprint.added` / `sprint.removed` | | `name` |
+| `sprint.changed` | goal, notes or position changed | `name`, `changes` |
+| `claim.acquired` | an issue got a holder (`previousAssignee` on a takeover) | `id`, `title`, `assignee`, `leaseUntil` |
+| `claim.renewed` | the holder extended the lease | `id`, `title`, `assignee`, `leaseUntil` |
+| `claim.released` | the holder was cleared | `id`, `title`, `assignee` (the former one) |
+
+A claim is one `claim.*` event: the `doing` it sets (and the `ready` a release restores) is
+not repeated as `issue.changed`. Marking a claimed issue `done` yields both
+`issue.changed` and `claim.released`. A lease running out is not a file change, so it
+produces no event; `show` and `validate` flag expired leases. There is no event log on
+disk: events are the diff between two snapshots, so changes made while `watch` is not
+running are not replayed, and several changes inside one poll interval fold into their net
+effect (a manual `set-status doing` followed by a `claim` shows as just the claim).
+
+Events go to stdout and nothing else does; status goes to stderr: `Watching <root>` once the
+baseline is taken (nothing earlier is missed after that line), and a warning if the roadmap
+stays unreadable for several polls (a bad merge, a hand edit) and again when it recovers.
+`watch` exits with an error when its stdout is closed, so a killed `Monitor` doesn't leave
+an orphan polling forever.
+
 ## Reader (the linchpin — rich enough that the agent never opens raw files)
 
 By default, done issues and done sprints are hidden — `--done` reveals them.

@@ -8,7 +8,8 @@ import { createSprint } from "./createSprint.js";
 import { init } from "./init.js";
 import { move } from "./move.js";
 import { setStatus } from "./setStatus.js";
-import { fingerprint, refreshViewData } from "./viewRefresh.js";
+import { fingerprint } from "../../storage/watch.js";
+import { refreshViewData } from "./viewRefresh.js";
 
 describe("viewRefresh", () => {
   let cwd: string;

@@ -22,12 +22,15 @@ import { skillsSourceDir } from "../packageRoot.js";
 import { describeRoot, resolveRoadmapRoot } from "../storage/root.js";
 import { claimIssue, nextIssue, releaseIssue, renewIssue } from "./commands/claim.js";
 import { resolveAgent } from "../domain/claims.js";
+import { watchRoadmap, type WatchEvent } from "../storage/watch.js";
 import { parseArgs, requireIntPositional, requirePositional } from "./parse.js";
 
 /** `localCwd` is the directory the user ran scrummy in, which differs from `cwd` (the roadmap root) in a worktree. */
 export interface CommandContext {
   localCwd: string;
   env: Record<string, string | undefined>;
+  /** Streams text to stdout while the command is still running (used by `watch`). */
+  write?: (text: string) => void;
 }
 
 export type CommandHandler = (cwd: string, args: string[], context?: CommandContext) => string | void;
@@ -38,6 +41,26 @@ function claimOptions(parsed: ReturnType<typeof parseArgs>, context: CommandCont
     lease: typeof parsed.flags.lease === "string" ? parsed.flags.lease : undefined,
     steal: parsed.flags.steal === true,
   };
+}
+
+function describeEvent(event: WatchEvent): string {
+  switch (event.type) {
+    case "sprint.added":
+    case "sprint.removed":
+      return `${event.type} ${event.name}`;
+    case "sprint.changed":
+      return `${event.type} ${event.name} (${Object.keys(event.changes).join(", ")})`;
+    case "issue.changed":
+      return `${event.type} #${event.id} ${event.title} (${Object.keys(event.changes).join(", ")})`;
+    case "claim.acquired":
+    case "claim.renewed":
+    case "claim.released":
+      return `${event.type} #${event.id} ${event.title} @${event.assignee}`;
+    case "issue.added":
+      return `${event.type} #${event.id} ${event.title} [${event.status}]`;
+    case "issue.removed":
+      return `${event.type} #${event.id} ${event.title}`;
+  }
 }
 
 export const commands: Record<string, CommandHandler> = {
@@ -188,6 +211,25 @@ export const commands: Record<string, CommandHandler> = {
     });
   },
 
+  watch: (cwd, args, context) => {
+    const parsed = parseArgs(args);
+    const json = parsed.flags.json === true;
+    const write = context?.write ?? ((text: string) => process.stdout.write(text));
+    const interval = parsed.flags.interval === undefined ? 500 : Number(parsed.flags.interval);
+    if (!Number.isInteger(interval) || interval < 50) {
+      throw new Error("Invalid --interval — expected a whole number of milliseconds, at least 50");
+    }
+    // Status goes to stderr in both modes so stdout carries only events (a Monitor turns each
+    // stdout line into a notification) while a caller can still tell when watching began.
+    const note = (text: string) => process.stderr.write(`${text}\n`);
+    watchRoadmap(cwd, {
+      intervalMs: interval,
+      onReady: () => note(`Watching ${cwd} (Ctrl-C to stop)`),
+      warn: note,
+      emit: (event) => write(json ? `${JSON.stringify(event)}\n` : `${describeEvent(event)}\n`),
+    });
+  },
+
   where: (cwd) => describeRoot(resolveRoadmapRoot(cwd)),
 
   "install-skills": (cwd) => {
@@ -254,6 +296,7 @@ export const commandDescriptions: Record<string, string> = {
   release: "Release your claim on an issue",
   renew: "Extend the lease on an issue you hold",
   next: "Show the next ready unclaimed issue; --claim also claims it",
+  watch: "Stream roadmap changes made by other processes (--json for NDJSON)",
   where: "Print the resolved roadmap root and which rule picked it",
   status: "Print a one-line summary of the active sprint",
   validate: "Check docs/roadmap/* for invariant violations (e.g. duplicate ids or sprint names)",
