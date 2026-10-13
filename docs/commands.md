@@ -45,11 +45,14 @@ scrummy next [--sprint <name>] [--claim]     # the next ready, unclaimed issue; 
 
 All of them run under the roadmap lock, so of N concurrent `claim` / `next --claim` calls
 exactly one wins an issue. Identity is `--as <name>`, then `SCRUMMY_AGENT`, then the name of
-the directory you ran scrummy in (the worktree name). A claim is a lease (default `2h`,
+the directory you ran scrummy in (the worktree name). Two agents sharing a directory
+name would share an identity and silently extend each other's claims, so give each its own
+`SCRUMMY_AGENT` when they don't have separate worktrees. A claim is a lease (default `2h`,
 units `s m h d`): once it expires anyone can claim the issue again, and `next` offers it
 again, even if it is still `doing`. Claiming your own issue again just extends it.
-`--steal` takes over or releases a live lease. `set-status <id> done` clears the claim.
-`doing` without a claim stays allowed. `next` walks active sprints first, then by sprint
+`--steal` takes over (`claim`) or releases (`release`) a live lease; `renew` and `next` have no `--steal`.
+Changing an issue's status to anything but `doing` (`done` included) clears its claim.
+`doing` without a claim stays allowed (release leaves such an issue as it is). `next` walks active sprints first, then by sprint
 position, then the backlog; within each by id. It exits non-zero when nothing is available.
 
 `show`, `show --json` and the viewer display the assignee (`@name`) and flag an expired

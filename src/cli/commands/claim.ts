@@ -1,4 +1,4 @@
-import { claimState, parseLease } from "../../domain/claims.js";
+import { claimState, parseLease, withoutClaim } from "../../domain/claims.js";
 import type { Issue } from "../../domain/types.js";
 import { assertIssueExists, assertSprintExists } from "../../domain/validation.js";
 import { readIssues, writeIssues } from "../../storage/issuesStore.js";
@@ -15,11 +15,6 @@ export interface ClaimOptions {
 
 function replaceIssue(cwd: string, issues: Issue[], updated: Issue): void {
   writeIssues(cwd, issues.map((issue) => (issue.id === updated.id ? updated : issue)));
-}
-
-function withoutClaim(issue: Issue): Issue {
-  const { assignee, claimedAt, leaseUntil, ...rest } = issue;
-  return rest;
 }
 
 function holdsLive(issue: Issue, now: number): boolean {
@@ -95,7 +90,11 @@ export function renewIssue(cwd: string, id: number, options: ClaimOptions): stri
     throw new Error(`Issue #${id} is claimed by ${issue.assignee}, not ${options.agent}`);
   }
   const now = options.now ?? Date.now();
-  const renewed = { ...issue, leaseUntil: new Date(now + parseLease(options.lease)).toISOString() };
+  const renewed = {
+    ...issue,
+    leaseUntil: new Date(now + parseLease(options.lease)).toISOString(),
+    updatedAt: new Date(now).toISOString(),
+  };
   replaceIssue(cwd, issues, renewed);
   return `Renewed issue #${id} until ${renewed.leaseUntil}`;
 }

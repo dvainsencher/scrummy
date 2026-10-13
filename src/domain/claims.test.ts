@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Issue } from "./types.js";
-import { claimState, DEFAULT_LEASE_MS, parseLease, resolveAgent } from "./claims.js";
+import { claimState, DEFAULT_LEASE_MS, parseLease, resolveAgent, withoutClaim } from "./claims.js";
 
 describe("parseLease", () => {
   it("parses seconds, minutes, hours and days", () => {
@@ -46,5 +46,33 @@ describe("resolveAgent", () => {
 
   it("ignores a bare --as flag without a value", () => {
     expect(resolveAgent(true, {}, "/x/wt")).toBe("wt");
+  });
+});
+
+describe("resolveAgent validation", () => {
+  it("trims the name", () => {
+    expect(resolveAgent("  alice ", {}, "/x/wt")).toBe("alice");
+  });
+
+  it("rejects control characters and whitespace-only names", () => {
+    expect(() => resolveAgent("a\nb", {}, "/x/wt")).toThrow(/agent/i);
+    expect(() => resolveAgent("a\u001b[31m", {}, "/x/wt")).toThrow(/agent/i);
+    expect(() => resolveAgent(undefined, { SCRUMMY_AGENT: "x\ty" }, "/x/wt")).toThrow(/agent/i);
+  });
+
+  it("falls back past a blank flag", () => {
+    expect(resolveAgent("   ", {}, "/x/wt")).toBe("wt");
+  });
+});
+
+describe("withoutClaim", () => {
+  it("drops the three claim fields only", () => {
+    const issue: Issue = {
+      id: 1, title: "t", status: "doing", sprint: "", createdAt: "c", updatedAt: "u",
+      assignee: "a", claimedAt: "x", leaseUntil: "y",
+    };
+    expect(withoutClaim(issue)).toEqual({
+      id: 1, title: "t", status: "doing", sprint: "", createdAt: "c", updatedAt: "u",
+    });
   });
 });

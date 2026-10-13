@@ -113,6 +113,36 @@ describe("claims", () => {
     });
   });
 
+  describe("status changes end the claim", () => {
+    it("moving a claimed issue to ready or idea clears it", () => {
+      claimIssue(cwd, id, { agent: "alice", now: T0 });
+      setStatus(cwd, id, "ready");
+      expect(issue().assignee).toBeUndefined();
+    });
+
+    it("setting doing keeps an existing claim", () => {
+      claimIssue(cwd, id, { agent: "alice", now: T0 });
+      setStatus(cwd, id, "doing");
+      expect(issue().assignee).toBe("alice");
+    });
+  });
+
+  describe("expired claims", () => {
+    it("can be released by anyone and renewed by the original holder", () => {
+      claimIssue(cwd, id, { agent: "alice", now: T0 });
+      renewIssue(cwd, id, { agent: "alice", now: T0 + 3 * HOUR });
+      expect(issue().leaseUntil).toBe(new Date(T0 + 5 * HOUR).toISOString());
+      releaseIssue(cwd, id, { agent: "bob", now: T0 + 9 * HOUR });
+      expect(issue().assignee).toBeUndefined();
+    });
+
+    it("renew bumps updatedAt", () => {
+      claimIssue(cwd, id, { agent: "alice", now: T0 });
+      renewIssue(cwd, id, { agent: "alice", now: T0 + HOUR });
+      expect(issue().updatedAt).toBe(new Date(T0 + HOUR).toISOString());
+    });
+  });
+
   describe("done clears the claim", () => {
     it("drops assignee, claimedAt and leaseUntil", () => {
       claimIssue(cwd, id, { agent: "alice", now: T0 });
@@ -146,6 +176,15 @@ describe("claims", () => {
       setStatus(cwd, other, "idea");
       expect(() => nextIssue(cwd, { agent: "bob", now: T0 + HOUR })).toThrow(/No ready/);
       expect(nextIssue(cwd, { agent: "bob", now: T0 + 3 * HOUR })).toContain(`#${id}`);
+    });
+
+    it("rejects an unknown sprint", () => {
+      expect(() => nextIssue(cwd, { agent: "x", sprint: "nope" })).toThrow(/does not exist/);
+    });
+
+    it("says so when nothing is available", () => {
+      setStatus(cwd, id, "idea");
+      expect(() => nextIssue(cwd, { agent: "x" })).toThrow(/No ready unclaimed issue/);
     });
 
     it("only claims with --claim", () => {

@@ -1,4 +1,5 @@
 import type { IssueStatus } from "../../domain/types.js";
+import { withoutClaim } from "../../domain/claims.js";
 import { assertIssueExists, assertIssueStatus } from "../../domain/validation.js";
 import { readIssues, writeIssues } from "../../storage/issuesStore.js";
 
@@ -19,15 +20,10 @@ export function editIssue(cwd: string, id: number, options: EditIssueOptions): s
     if (issue.id !== id) {
       return issue;
     }
-    const { assignee, claimedAt, leaseUntil, ...unclaimed } = issue;
-    const edited = {
-      ...unclaimed,
-      title: options.title ?? issue.title,
-      status: (options.status as IssueStatus | undefined) ?? issue.status,
-      updatedAt: now,
-    };
-    // Finishing an issue ends its claim.
-    return edited.status === "done" ? edited : { ...edited, assignee, claimedAt, leaseUntil };
+    const status = (options.status as IssueStatus | undefined) ?? issue.status;
+    const edited = { ...issue, title: options.title ?? issue.title, status, updatedAt: now };
+    // A claim only makes sense while the issue is being worked on.
+    return status === "doing" ? edited : withoutClaim(edited);
   });
 
   writeIssues(cwd, updated);

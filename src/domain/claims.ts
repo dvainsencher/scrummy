@@ -35,8 +35,16 @@ export function resolveAgent(
   env: Record<string, string | undefined>,
   localCwd: string,
 ): string {
-  if (typeof flag === "string" && flag !== "") {
-    return flag;
+  const name = (typeof flag === "string" && flag.trim() !== "" ? flag : env.SCRUMMY_AGENT)?.trim();
+  const agent = name || path.basename(localCwd);
+  // The name is echoed into terminals and ROADMAP.md, so keep escape sequences and newlines out.
+  if (/[\u0000-\u001f\u007f]/.test(agent)) {
+    throw new Error("Invalid agent name — it must not contain control characters");
   }
-  return env.SCRUMMY_AGENT || path.basename(localCwd);
+  return agent;
+}
+
+export function withoutClaim(issue: Issue): Issue {
+  const { assignee, claimedAt, leaseUntil, ...rest } = issue;
+  return rest;
 }
