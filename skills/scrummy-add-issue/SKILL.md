@@ -43,5 +43,10 @@ could open.
    use `npx scrummy move <id> <sprint-name>` or `npx scrummy move <id> --backlog` instead of
    adding a duplicate.
 
+Run these from whatever worktree you are in: scrummy writes to the project's shared
+roadmap (`npx scrummy where` shows where), so there is no separate worktree to set up.
+If it refuses because the roadmap's checkout isn't on `main`, tell the user instead of
+overriding with `--allow-branch`.
+
 Tell the user the new issue's id and where it landed (backlog or which sprint) in one
 line — don't narrate the steps above.

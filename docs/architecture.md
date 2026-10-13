@@ -138,9 +138,15 @@ diverging copy. This reads git's metadata files (`.git`, `commondir`, `HEAD`) as
 files — no subprocess, so [scrummy runs no git commands](#scrummy-runs-no-git-commands)
 still holds. Same machine only.
 
+On top of that single store, `claim`/`next --claim` give agents exclusive, leased ownership
+of an issue, and `watch` tells them what the others changed (a diff of two snapshots, no
+event log). The branch guard keeps roadmap writes from landing on a feature branch of the
+canonical checkout.
+
 ### What this does not cover
 
-**Switching branches changes what the backlog shows.** `docs/roadmap/` is versioned data
+**Switching branches changes what the backlog shows.** (Within one project this now
+concerns the canonical checkout's branch; other worktrees all see that one.) `docs/roadmap/` is versioned data
 living in git, so a branch sees the backlog as of that branch — and a long-lived branch
 can allocate an id that another branch already used. That surfaces as a conflict on one
 small file, and `scrummy validate` detects it after the fact. Removing this limit entirely

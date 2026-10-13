@@ -30,6 +30,7 @@ The atom of work.
 | `title` | one line |
 | `status` | `idea → ready → doing → done` (lifecycle only) |
 | `sprint` | a sprint name, or empty |
+| claim | optional `assignee` + lease, set by `scrummy claim` so several agents don't start the same issue |
 | spec | optional file at `specs/<id>.md` for detailed write-ups |
 | progress log | optional append-only entries, for resuming a long-running issue across sessions (`scrummy log-issue`/`scrummy show-log`) |
 
@@ -101,6 +102,11 @@ scrummy show --json          # same content, structured, for an agent
 scrummy status                # one-line summary of the active sprint
 scrummy view                  # interactive terminal kanban board
 ```
+
+Several agents or worktrees on one project share a single backlog, one id sequence and one
+lock; they take work with `scrummy claim <id>` / `scrummy next --claim` and follow each
+other's changes with `scrummy watch --json`. See
+[docs/commands.md](docs/commands.md#claims-several-agents-one-backlog).
 
 Or, in conversation with an agent that has the skills installed: "add this to the
 backlog and slot it into the auth sprint" — the agent reads `show --json`,
