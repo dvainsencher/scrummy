@@ -8,12 +8,14 @@ beforeAll(() => { (globalThis as Record<string, unknown>).IS_REACT_ACT_ENVIRONME
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { KanbanApp, computeLayout, buildViewData } from "./view.js";
+import { KanbanApp, computeLayout } from "./view.js";
+import { buildViewData } from "./viewRefresh.js";
 import { init } from "./init.js";
 import { addIssue } from "./addIssue.js";
 import { setStatus } from "./setStatus.js";
 import { createSprint } from "./createSprint.js";
-import { move } from "./move.js";
+import { move, moveToBacklog } from "./move.js";
+import { removeSprint } from "./removeSprint.js";
 import type { KanbanData } from "./kanban.js";
 
 function makeData(overrides: Partial<KanbanData> = {}): KanbanData {
@@ -277,6 +279,11 @@ describe("buildViewData", () => {
 describe("KanbanApp live refresh", () => {
   let cwd: string;
   const tick = (ms = 150) => act(async () => { await new Promise((r) => setTimeout(r, ms)); });
+  // Poll the rendered frame until it satisfies `ok` (or time out) instead of sleeping a fixed time.
+  const until = async (frame: () => string | undefined, ok: (f: string) => boolean, timeoutMs = 3000) => {
+    const start = Date.now();
+    while (!ok(frame() ?? "") && Date.now() - start < timeoutMs) await tick(30);
+  };
 
   beforeEach(() => {
     cwd = fs.mkdtempSync(path.join(os.tmpdir(), "scrummy-live-"));
@@ -292,7 +299,10 @@ describe("KanbanApp live refresh", () => {
     const { plan, data } = buildViewData(cwd);
     const { lastFrame, unmount } = render(<KanbanApp data={data} plan={plan} cwd={cwd} refreshIntervalMs={20} />);
     setStatus(cwd, id, "done");
-    await tick();
+    await until(lastFrame, (f) => {
+      const l = f.split("\n").find((x) => x.includes("Live card")) ?? "";
+      return l.indexOf("Live card") > l.length / 2;
+    });
     const lines = (lastFrame() ?? "").split("\n");
     const line = lines.find((l) => l.includes("Live card")) ?? "";
     // Card is now in the rightmost (DONE) column, not the leftmost.
@@ -309,10 +319,10 @@ describe("KanbanApp live refresh", () => {
     move(cwd, id, "alpha");
     setStatus(cwd, id, "doing");
     createSprint(cwd, "beta-new", { goal: "g" });
-    await tick();
+    await until(lastFrame, (f) => f.includes("alpha"));
     expect(lastFrame() ?? "").toContain("alpha");
     await act(async () => { stdin.write("s"); });
-    await tick(30);
+    await until(lastFrame, (f) => f.includes("beta-new"));
     expect(lastFrame() ?? "").toContain("beta-new");
     unmount();
   });
@@ -325,10 +335,80 @@ describe("KanbanApp live refresh", () => {
     const { plan, data } = buildViewData(cwd);
     const { lastFrame, stdin, unmount } = render(<KanbanApp data={data} plan={plan} cwd={cwd} refreshIntervalMs={20} />);
     await act(async () => { stdin.write("b"); });
+    setStatus(cwd, other, "doing"); // makes "alpha" the active sprint: the default view would switch to it
     setStatus(cwd, id, "ready");
-    await tick();
-    expect(lastFrame() ?? "").toContain("backlog");
-    expect(lastFrame() ?? "").toContain("In backlog");
+    await until(lastFrame, (f) => f.includes("In backlog") && f.includes("READY"));
+    const frame = lastFrame() ?? "";
+    expect(frame).toContain("— backlog");
+    expect(frame).not.toContain("sprint: alpha");
+    unmount();
+  });
+});
+
+describe("KanbanApp live refresh — position and view", () => {
+  let cwd: string;
+  const tick = (ms = 30) => act(async () => { await new Promise((r) => setTimeout(r, ms)); });
+  const until = async (frame: () => string | undefined, ok: (f: string) => boolean, timeoutMs = 3000) => {
+    const start = Date.now();
+    while (!ok(frame() ?? "") && Date.now() - start < timeoutMs) await tick();
+  };
+
+  beforeEach(() => {
+    cwd = fs.mkdtempSync(path.join(os.tmpdir(), "scrummy-live-pos-"));
+    init(cwd);
+  });
+
+  afterEach(() => {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  });
+
+  it("keeps the cursor on the same issue when an earlier card disappears", async () => {
+    const a = addIssue(cwd, "First card");
+    addIssue(cwd, "Second card");
+    const { plan, data } = buildViewData(cwd);
+    const { lastFrame, stdin, unmount } = render(<KanbanApp data={data} plan={plan} cwd={cwd} refreshIntervalMs={20} />);
+    await act(async () => { stdin.write("\u001B[B"); }); // down: focus "Second card" (selected cards use ╔)
+    const selectedLine = (f: string) => f.split("\n").find((l) => l.includes("╔")) ?? "";
+    await until(lastFrame, (f) => selectedLine(f).length > 0);
+    setStatus(cwd, a, "done"); // First card leaves the column; Second card moves up a row
+    await until(lastFrame, (f) => !f.split("\n").some((l) => l.includes("First card") && l.indexOf("First card") < l.length / 2));
+    const frame = lastFrame() ?? "";
+    const lines = frame.split("\n");
+    const topIdx = lines.findIndex((l) => l.includes("╔"));
+    expect(lines.slice(topIdx, topIdx + 6).join("\n")).toContain("Second card");
+    unmount();
+  });
+
+  it("clamps the cursor when the focused issue vanishes from a shrinking column", async () => {
+    addIssue(cwd, "One");
+    const two = addIssue(cwd, "Two");
+    const { plan, data } = buildViewData(cwd);
+    const { lastFrame, stdin, unmount } = render(<KanbanApp data={data} plan={plan} cwd={cwd} refreshIntervalMs={20} />);
+    await act(async () => { stdin.write("\u001B[B"); }); // focus "Two"
+    setStatus(cwd, two, "done");
+    await until(lastFrame, (f) => f.includes("╔") && f.includes("One"));
+    expect(lastFrame() ?? "").toContain("╔"); // a card is still selected; no crash or empty selection
+    unmount();
+  });
+
+  it("falls back to the default view when the pinned sprint disappears", async () => {
+    createSprint(cwd, "alpha", { goal: "g" });
+    const id = addIssue(cwd, "Pinned");
+    move(cwd, id, "alpha");
+    setStatus(cwd, id, "doing");
+    const { plan, data } = buildViewData(cwd);
+    const { lastFrame, stdin, unmount } = render(<KanbanApp data={data} plan={plan} cwd={cwd} refreshIntervalMs={20} />);
+    await act(async () => { stdin.write("s"); });
+    await act(async () => { stdin.write("\r"); }); // pin "alpha" explicitly
+    await until(lastFrame, (f) => f.includes("sprint: alpha"));
+    moveToBacklog(cwd, id);
+    removeSprint(cwd, "alpha"); // the pinned sprint no longer exists
+    createSprint(cwd, "beta", { goal: "g" });
+    const other = addIssue(cwd, "Other");
+    move(cwd, other, "beta");
+    setStatus(cwd, other, "doing");
+    await until(lastFrame, (f) => f.includes("sprint: beta"));
+    expect(lastFrame() ?? "").toContain("sprint: beta");
     unmount();
   });
 });

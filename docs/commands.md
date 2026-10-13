@@ -48,6 +48,7 @@ scrummy view                                 # interactive terminal kanban board
                                              #   sprint board — every sprint laid out in ACTIVE | PLANNED | DONE
                                              #   columns by derived status; Enter drills into a sprint's issues
                                              #   The board refreshes itself (~1s) when roadmap files change, keeping your cursor and view
+                                             #   (an open card-detail screen is a snapshot; close and reopen it to see edits)
 ```
 
 Default `show` output:

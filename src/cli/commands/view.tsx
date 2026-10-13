@@ -127,11 +127,13 @@ interface KanbanAppProps {
   initialScrollOffsets?: number[];
   /** @internal test injection — poll interval for on-disk changes; 0 disables */
   refreshIntervalMs?: number;
+  /** Fingerprint from the initial load (see buildViewData); defaults to one taken at mount. */
+  initialFingerprint?: string;
 }
 
 const REFRESH_INTERVAL_MS = 1000;
 
-export function KanbanApp({ data: initialData, plan: initialPlan, cwd, maxVisibleCards: maxVisibleProp, initialScrollOffsets, refreshIntervalMs = REFRESH_INTERVAL_MS }: KanbanAppProps) {
+export function KanbanApp({ data: initialData, plan: initialPlan, cwd, maxVisibleCards: maxVisibleProp, initialScrollOffsets, refreshIntervalMs = REFRESH_INTERVAL_MS, initialFingerprint }: KanbanAppProps) {
   const [data, setData] = useState(initialData);
   const [plan, setPlan] = useState(initialPlan);
   // Which view (sprint name, or null = backlog) the user is looking at, so a refresh can re-select it.
@@ -186,13 +188,13 @@ export function KanbanApp({ data: initialData, plan: initialPlan, cwd, maxVisibl
 
   useEffect(() => {
     if (!cwd || refreshIntervalMs <= 0) return;
-    let last = fingerprint(cwd);
+    let last = initialFingerprint ?? fingerprint(cwd);
     const timer = setInterval(() => {
       const current = fingerprint(cwd);
       if (current === last) return;
       const fresh = refreshViewData(cwd);
       if (!fresh) return; // caught mid-write; fingerprint unchanged so we retry next tick
-      last = current;
+      last = fresh.fingerprint;
       const { data: old, nav: oldNav, viewSprint: sprint, maxVisible: mv } = live.current;
       const newData = sprint === undefined ? buildKanbanData(fresh.plan) : selectKanbanView(fresh.plan, sprint);
       // Keep the cursor on the same issue if it still exists in the view, else clamp in place.
@@ -205,7 +207,8 @@ export function KanbanApp({ data: initialData, plan: initialPlan, cwd, maxVisibl
       const newNav = { colIndex, rowIndex: hit?.rowIndex ?? Math.max(0, Math.min(oldNav.rowIndex, colLen - 1)) };
       setPlan(fresh.plan);
       setData(newData);
-      if (sprint !== undefined) setViewSprint(newData.sprintName);
+      // A pinned sprint that vanished falls back to the default view, which keeps following the plan.
+      if (sprint !== undefined) setViewSprint(newData.sprintName === sprint ? sprint : undefined);
       setNav(newNav);
       setScrollOffsets((prev) => {
         const next = prev.map((offset, i) => {
@@ -341,9 +344,7 @@ export function KanbanApp({ data: initialData, plan: initialPlan, cwd, maxVisibl
   );
 }
 
-export { buildViewData };
-
 export function view(cwd: string): void {
-  const { plan, data } = buildViewData(cwd);
-  render(<KanbanApp data={data} plan={plan} cwd={cwd} />);
+  const { plan, data, fingerprint: stamp } = buildViewData(cwd);
+  render(<KanbanApp data={data} plan={plan} cwd={cwd} initialFingerprint={stamp} />);
 }
