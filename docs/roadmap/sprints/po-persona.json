@@ -1,0 +1,6 @@
+{
+  "name": "po-persona",
+  "position": 80,
+  "goal": "a single conversational entry point that routes natural requests to the right existing skill.",
+  "notes": ""
+}

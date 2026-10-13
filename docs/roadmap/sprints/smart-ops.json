@@ -1,0 +1,6 @@
+{
+  "name": "smart-ops",
+  "position": 40,
+  "goal": "the token-using layer — the only part that reaches for a model.",
+  "notes": ""
+}

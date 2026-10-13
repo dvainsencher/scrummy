@@ -1,0 +1,8 @@
+{
+  "id": 66,
+  "title": "kanban view: board does not scroll to keep the selected issue visible when navigating with arrow keys",
+  "status": "done",
+  "sprint": "kanban-viewer-polish",
+  "createdAt": "2026-06-26T17:59:46.122Z",
+  "updatedAt": "2026-06-26T21:18:36.994Z"
+}

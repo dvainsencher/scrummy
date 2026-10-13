@@ -1,0 +1,6 @@
+{
+  "name": "agent-skills",
+  "position": 30,
+  "goal": "wire it into Claude Code so a design discussion ends in clean command calls.",
+  "notes": ""
+}

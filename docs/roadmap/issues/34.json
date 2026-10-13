@@ -1,0 +1,8 @@
+{
+  "id": 34,
+  "title": "CLI batch-import — scrummy import <file> validates + writes all issues at once",
+  "status": "done",
+  "sprint": "migration-tooling",
+  "createdAt": "2026-06-26T12:33:34.858Z",
+  "updatedAt": "2026-06-26T12:33:34.858Z"
+}

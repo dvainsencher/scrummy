@@ -1,0 +1,6 @@
+{
+  "name": "migration-tooling",
+  "position": 70,
+  "goal": "turn the manual migration playbook into something a human can review before and after it runs.",
+  "notes": ""
+}

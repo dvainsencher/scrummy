@@ -1,0 +1,8 @@
+{
+  "id": 73,
+  "title": "Mandatory git-sync mode for mutating commands (fetch-rebase-retry loop) to enable safe parallel worktree use",
+  "status": "done",
+  "sprint": "",
+  "createdAt": "2026-08-10T16:50:11.576Z",
+  "updatedAt": "2026-08-10T17:09:44.560Z"
+}

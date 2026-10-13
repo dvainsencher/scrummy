@@ -1,0 +1,6 @@
+{
+  "name": "kanban-viewer-polish",
+  "position": 110,
+  "goal": "Fix done-column visibility, scroll-to-selected navigation, and sprint-state display in the kanban viewer.",
+  "notes": ""
+}

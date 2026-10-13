@@ -1,0 +1,6 @@
+{
+  "name": "progress-log",
+  "position": 90,
+  "goal": "give a long-running doing issue a resumable history.",
+  "notes": ""
+}

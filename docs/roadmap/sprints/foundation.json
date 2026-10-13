@@ -1,0 +1,6 @@
+{
+  "name": "foundation",
+  "position": 10,
+  "goal": "a fully working flat-file tracker driven entirely by hand, with no LLM anywhere.",
+  "notes": ""
+}

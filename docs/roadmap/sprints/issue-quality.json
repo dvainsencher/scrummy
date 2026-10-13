@@ -1,0 +1,6 @@
+{
+  "name": "issue-quality",
+  "position": 60,
+  "goal": "stop underspecified issues from being filed silently.",
+  "notes": ""
+}
