@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Box, Text, render, useInput, useApp, useStdout } from "ink";
 import fs from "node:fs";
 import type { IssueView, Plan } from "../../reader/plan.js";
 import type { IssueStatus, ProgressEntry } from "../../domain/types.js";
 import { ISSUE_STATUSES } from "../../domain/types.js";
-import { buildPlan } from "../../reader/plan.js";
 import { specFilePath } from "../../storage/paths.js";
 import { readProgress } from "../../storage/progressStore.js";
 import { buildKanbanData, selectKanbanView, type KanbanData } from "./kanban.js";
+import { buildViewData, refreshViewData, fingerprint } from "./viewRefresh.js";
 import { SprintBoard } from "./sprintBoard.js";
 import { moveLeft, moveRight, moveUp, moveDown, clampScroll, type NavState } from "./navigation.js";
 import { CardDetail } from "./cardDetail.js";
@@ -125,10 +125,20 @@ interface KanbanAppProps {
   maxVisibleCards?: number;
   /** @internal test injection — preset scroll positions */
   initialScrollOffsets?: number[];
+  /** @internal test injection — poll interval for on-disk changes; 0 disables */
+  refreshIntervalMs?: number;
+  /** Fingerprint from the initial load (see buildViewData); defaults to one taken at mount. */
+  initialFingerprint?: string;
 }
 
-export function KanbanApp({ data: initialData, plan, cwd, maxVisibleCards: maxVisibleProp, initialScrollOffsets }: KanbanAppProps) {
+const REFRESH_INTERVAL_MS = 1000;
+
+export function KanbanApp({ data: initialData, plan: initialPlan, cwd, maxVisibleCards: maxVisibleProp, initialScrollOffsets, refreshIntervalMs = REFRESH_INTERVAL_MS, initialFingerprint }: KanbanAppProps) {
   const [data, setData] = useState(initialData);
+  const [plan, setPlan] = useState(initialPlan);
+  // Which view (sprint name, or null = backlog) the user is looking at, so a refresh can re-select it.
+  // `undefined` = the default view (active sprint, else backlog), which keeps following the plan.
+  const [viewSprint, setViewSprint] = useState<string | null | undefined>(undefined);
   const [showSprintBoard, setShowSprintBoard] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [nav, setNav] = useState<NavState>(() => {
@@ -166,10 +176,51 @@ export function KanbanApp({ data: initialData, plan, cwd, maxVisibleCards: maxVi
 
   const resetView = (newData: KanbanData) => {
     setData(newData);
+    setViewSprint(newData.sprintName);
     const firstNonEmpty = ISSUE_STATUSES.findIndex((s) => (newData.columns[s]?.length ?? 0) > 0);
     setNav({ colIndex: firstNonEmpty < 0 ? 0 : firstNonEmpty, rowIndex: 0 });
     setScrollOffsets(ISSUE_STATUSES.map(() => 0));
   };
+
+  // Latest values for the polling closure, which outlives any single render.
+  const live = useRef({ data, nav, viewSprint, maxVisible });
+  live.current = { data, nav, viewSprint, maxVisible };
+
+  useEffect(() => {
+    if (!cwd || refreshIntervalMs <= 0) return;
+    let last = initialFingerprint ?? fingerprint(cwd);
+    const timer = setInterval(() => {
+      const current = fingerprint(cwd);
+      if (current === last) return;
+      const fresh = refreshViewData(cwd);
+      if (!fresh) return; // caught mid-write; fingerprint unchanged so we retry next tick
+      last = fresh.fingerprint;
+      const { data: old, nav: oldNav, viewSprint: sprint, maxVisible: mv } = live.current;
+      const newData = sprint === undefined ? buildKanbanData(fresh.plan) : selectKanbanView(fresh.plan, sprint);
+      // Keep the cursor on the same issue if it still exists in the view, else clamp in place.
+      const followed = ISSUE_STATUSES.flatMap((status, colIndex) =>
+        newData.columns[status].map((issue, rowIndex) => ({ id: issue.id, colIndex, rowIndex })));
+      const focusedId = old.columns[ISSUE_STATUSES[oldNav.colIndex]!]?.[oldNav.rowIndex]?.id;
+      const hit = followed.find((f) => f.id === focusedId);
+      const colIndex = hit?.colIndex ?? oldNav.colIndex;
+      const colLen = newData.columns[ISSUE_STATUSES[colIndex]!].length;
+      const newNav = { colIndex, rowIndex: hit?.rowIndex ?? Math.max(0, Math.min(oldNav.rowIndex, colLen - 1)) };
+      setPlan(fresh.plan);
+      setData(newData);
+      // A pinned sprint that vanished falls back to the default view, which keeps following the plan.
+      if (sprint !== undefined) setViewSprint(newData.sprintName === sprint ? sprint : undefined);
+      setNav(newNav);
+      setScrollOffsets((prev) => {
+        const next = prev.map((offset, i) => {
+          const len = newData.columns[ISSUE_STATUSES[i]!].length;
+          return Math.max(0, Math.min(offset, Math.max(0, len - mv)));
+        });
+        next[newNav.colIndex] = clampScroll(next[newNav.colIndex]!, newNav.rowIndex, mv);
+        return next;
+      });
+    }, refreshIntervalMs);
+    return () => clearInterval(timer);
+  }, [cwd, refreshIntervalMs]);
 
   const columnCounts = (): number[] => ISSUE_STATUSES.map((s) => data.columns[s].length);
 
@@ -293,15 +344,7 @@ export function KanbanApp({ data: initialData, plan, cwd, maxVisibleCards: maxVi
   );
 }
 
-// The viewer must show the done column, so it always builds the plan with { done: true }.
-// Extracted from view() so the done-inclusion wiring is testable without rendering to a terminal.
-export function buildViewData(cwd: string): { plan: Plan; data: KanbanData } {
-  const plan = buildPlan(cwd, { done: true });
-  const data = buildKanbanData(plan);
-  return { plan, data };
-}
-
 export function view(cwd: string): void {
-  const { plan, data } = buildViewData(cwd);
-  render(<KanbanApp data={data} plan={plan} cwd={cwd} />);
+  const { plan, data, fingerprint: stamp } = buildViewData(cwd);
+  render(<KanbanApp data={data} plan={plan} cwd={cwd} initialFingerprint={stamp} />);
 }
