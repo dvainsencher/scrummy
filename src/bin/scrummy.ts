@@ -64,7 +64,7 @@ export function main(io: MainIO): number {
         // command touches it. No-op once converted. See storage/migrate.ts.
         migrateRoadmapLayout(commandCwd);
       }
-      const commandResult = handler(commandCwd, rest, { localCwd: io.cwd, env: process.env });
+      const commandResult = handler(commandCwd, rest, { localCwd: io.cwd, env: process.env, write: io.stdout });
       if (mutating) {
         try {
           generateRoadmapMarkdown(commandCwd);
