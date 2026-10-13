@@ -19,6 +19,7 @@ import { spec } from "./commands/spec.js";
 import { status } from "./commands/status.js";
 import { validate } from "./commands/validate.js";
 import { skillsSourceDir } from "../packageRoot.js";
+import { describeRoot, resolveRoadmapRoot } from "../storage/root.js";
 import { parseArgs, requireIntPositional, requirePositional } from "./parse.js";
 
 export type CommandHandler = (cwd: string, args: string[]) => string | void;
@@ -147,6 +148,8 @@ export const commands: Record<string, CommandHandler> = {
     });
   },
 
+  where: (cwd) => describeRoot(resolveRoadmapRoot(cwd)),
+
   "install-skills": (cwd) => {
     const installed = installSkills(cwd, skillsSourceDir());
     return installed.join("\n");
@@ -162,6 +165,9 @@ export const commands: Record<string, CommandHandler> = {
     view(cwd);
   },
 };
+
+/** Commands that act on the directory the user is in, not on the canonical roadmap root. */
+export const localCwdCommands: ReadonlySet<string> = new Set(["where", "install-skills"]);
 
 // Commands that change issues or sprints. After any of these runs, ROADMAP.md
 // is regenerated so it never drifts from docs/roadmap/*.
@@ -196,6 +202,7 @@ export const commandDescriptions: Record<string, string> = {
   "show-log": "Show an issue's progress log",
   show: "Show the backlog and sprints",
   "install-skills": "Install scrummy's Claude Code skills into this project",
+  where: "Print the resolved roadmap root and which rule picked it",
   status: "Print a one-line summary of the active sprint",
   validate: "Check docs/roadmap/* for invariant violations (e.g. duplicate ids or sprint names)",
   roadmap: "Regenerate the human-readable ROADMAP.md from the backlog",

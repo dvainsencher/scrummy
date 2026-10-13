@@ -129,6 +129,15 @@ The generated root `ROADMAP.md` is a second file both sides touch. It usually me
 cleanly too, but it can conflict when two changes land on adjacent lines. It is derived,
 so never resolve it by hand — resolve the data, then run `scrummy roadmap` to regenerate it.
 
+### One roadmap per project, across worktrees
+
+`storage/root.ts` resolves every worktree of a project to a single canonical checkout
+(see [commands.md](commands.md) § Roadmap root across worktrees), and the lock is keyed on
+that root, so agents in different worktrees share ids and files instead of each holding a
+diverging copy. This reads git's metadata files (`.git`, `commondir`, `HEAD`) as plain
+files — no subprocess, so [scrummy runs no git commands](#scrummy-runs-no-git-commands)
+still holds. Same machine only.
+
 ### What this does not cover
 
 **Switching branches changes what the backlog shows.** `docs/roadmap/` is versioned data
