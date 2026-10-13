@@ -166,11 +166,11 @@ export const commands: Record<string, CommandHandler> = {
   },
 };
 
-// Commands that change issues or sprints. After any of these runs, ROADMAP.md
-// is regenerated so it never drifts from docs/roadmap/*.
 /** Commands that act on the directory the user is in, not on the canonical roadmap root. */
 export const localCwdCommands: ReadonlySet<string> = new Set(["where", "install-skills"]);
 
+// Commands that change issues or sprints. After any of these runs, ROADMAP.md
+// is regenerated so it never drifts from docs/roadmap/*.
 export const roadmapMutatingCommands: ReadonlySet<string> = new Set([
   "init",
   "add-issue",

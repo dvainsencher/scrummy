@@ -52,8 +52,10 @@ export function main(io: MainIO): number {
     // canonical root through as the `cwd` every handler already takes. A few commands act
     // on the directory the user is actually in instead.
     const resolved = resolveRoadmapRoot(io.cwd);
-    if (mutating) {
-      assertCanonicalBranch(resolved, io.cwd, process.env, { allowBranch });
+    // `init` is exempt: a fresh repo has no config.json to name its main branch yet, and
+    // init never overwrites an existing roadmap.
+    if (mutating && commandName !== "init") {
+      assertCanonicalBranch(resolved, process.env, { allowBranch });
     }
     const commandCwd = localCwdCommands.has(commandName) ? io.cwd : resolved.root;
     const runCommand = (): string | void => {

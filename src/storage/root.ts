@@ -44,8 +44,16 @@ function readTrimmed(file: string): string | undefined {
   }
 }
 
-/** The git admin dir for a checkout: `.git/` itself, or the target of a linked worktree's `.git` file. */
+/**
+ * The git admin dir for a checkout: `.git/` itself, or the target of a linked worktree's
+ * `.git` file. Walks up so a root that is a subdirectory of a repo is still recognised.
+ */
 function gitDirOf(checkout: string): string | undefined {
+  const parent = path.dirname(checkout);
+  return gitDirIn(checkout) ?? (parent === checkout ? undefined : gitDirOf(parent));
+}
+
+function gitDirIn(checkout: string): string | undefined {
   const dotGit = path.join(checkout, ".git");
   let stat: fs.Stats;
   try {
@@ -108,11 +116,10 @@ export interface GuardOptions {
  */
 export function assertCanonicalBranch(
   resolved: ResolvedRoot,
-  cwd: string,
   env: Env = process.env,
   options: GuardOptions = {},
 ): void {
-  if (options.allowBranch || env.SCRUMMY_ALLOW_BRANCH) {
+  if (options.allowBranch || env.SCRUMMY_ALLOW_BRANCH === "1") {
     return;
   }
   const gitDir = gitDirOf(resolved.root);
@@ -121,14 +128,14 @@ export function assertCanonicalBranch(
     return;
   }
   const mainBranch =
-    readConfig(cwd).mainBranch ?? readConfig(resolved.root).mainBranch ?? DEFAULT_MAIN_BRANCH;
+    readConfig(resolved.root).mainBranch ?? DEFAULT_MAIN_BRANCH;
   const match = /^ref:\s*refs\/heads\/(.+)$/.exec(head);
   if (match?.[1] === mainBranch) {
     return;
   }
   const where = match ? `on branch "${match[1]}"` : "on a detached HEAD";
   throw new Error(
-    `Refusing to modify the roadmap: the canonical checkout ${resolved.root} is ${where}, ` +
+    `Refusing to modify the roadmap: the roadmap root ${resolved.root} is ${where}, ` +
       `not "${mainBranch}". Check out "${mainBranch}" there, or pass --allow-branch ` +
       `(or set SCRUMMY_ALLOW_BRANCH=1) to override.`,
   );

@@ -172,4 +172,11 @@ describe("main in a linked worktree", () => {
     expect(text).toContain(primary);
     expect(text).toContain("linked git worktree");
   });
+
+  it("lets init run in a repo whose branch is not main", () => {
+    const fresh = path.join(tmp, "fresh");
+    fs.mkdirSync(path.join(fresh, ".git"), { recursive: true });
+    fs.writeFileSync(path.join(fresh, ".git", "HEAD"), "ref: refs/heads/trunk\n");
+    expect(run(["init"], fresh)).toBe(0);
+  });
 });

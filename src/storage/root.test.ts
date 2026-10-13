@@ -88,38 +88,62 @@ describe("assertCanonicalBranch", () => {
 
   it("passes when the canonical checkout is on main", () => {
     const resolved = resolveRoadmapRoot(linked, {});
-    expect(() => assertCanonicalBranch(resolved, linked, {})).not.toThrow();
+    expect(() => assertCanonicalBranch(resolved, {})).not.toThrow();
   });
 
   it("refuses when the canonical checkout is on a feature branch", () => {
     fs.writeFileSync(path.join(primary, ".git", "HEAD"), "ref: refs/heads/feat/other\n");
     const resolved = resolveRoadmapRoot(linked, {});
-    expect(() => assertCanonicalBranch(resolved, linked, {})).toThrow(/feat\/other.*main/s);
+    expect(() => assertCanonicalBranch(resolved, {})).toThrow(/feat\/other.*main/s);
   });
 
   it("refuses a detached HEAD", () => {
     fs.writeFileSync(path.join(primary, ".git", "HEAD"), "0123456789abcdef\n");
     const resolved = resolveRoadmapRoot(linked, {});
-    expect(() => assertCanonicalBranch(resolved, linked, {})).toThrow(/detached/);
+    expect(() => assertCanonicalBranch(resolved, {})).toThrow(/detached/);
   });
 
   it("honours mainBranch from config.json", () => {
     fs.writeFileSync(path.join(primary, ".git", "HEAD"), "ref: refs/heads/trunk\n");
     fs.writeFileSync(path.join(primary, "docs", "roadmap", "config.json"), JSON.stringify({ mainBranch: "trunk" }));
     const resolved = resolveRoadmapRoot(linked, {});
-    expect(() => assertCanonicalBranch(resolved, linked, {})).not.toThrow();
+    expect(() => assertCanonicalBranch(resolved, {})).not.toThrow();
   });
 
   it("can be overridden explicitly", () => {
     fs.writeFileSync(path.join(primary, ".git", "HEAD"), "ref: refs/heads/feat/other\n");
     const resolved = resolveRoadmapRoot(linked, {});
-    expect(() => assertCanonicalBranch(resolved, linked, {}, { allowBranch: true })).not.toThrow();
-    expect(() => assertCanonicalBranch(resolved, linked, { SCRUMMY_ALLOW_BRANCH: "1" })).not.toThrow();
+    expect(() => assertCanonicalBranch(resolved, {}, { allowBranch: true })).not.toThrow();
+    expect(() => assertCanonicalBranch(resolved, { SCRUMMY_ALLOW_BRANCH: "1" })).not.toThrow();
   });
 
   it("also guards a plain checkout that is on a feature branch", () => {
     fs.writeFileSync(path.join(primary, ".git", "HEAD"), "ref: refs/heads/feat/mine\n");
     const resolved = resolveRoadmapRoot(primary, {});
-    expect(() => assertCanonicalBranch(resolved, primary, {})).toThrow(/feat\/mine/);
+    expect(() => assertCanonicalBranch(resolved, {})).toThrow(/feat\/mine/);
+  });
+
+  it("only SCRUMMY_ALLOW_BRANCH=1 overrides the guard", () => {
+    fs.writeFileSync(path.join(primary, ".git", "HEAD"), "ref: refs/heads/feat/other\n");
+    const resolved = resolveRoadmapRoot(linked, {});
+    expect(() => assertCanonicalBranch(resolved, { SCRUMMY_ALLOW_BRANCH: "0" })).toThrow();
+  });
+
+  it("takes mainBranch from the canonical root, not the worktree's own config", () => {
+    fs.writeFileSync(path.join(primary, ".git", "HEAD"), "ref: refs/heads/feat/other\n");
+    fs.mkdirSync(path.join(linked, "docs", "roadmap"), { recursive: true });
+    fs.writeFileSync(
+      path.join(linked, "docs", "roadmap", "config.json"),
+      JSON.stringify({ mainBranch: "feat/other" }),
+    );
+    const resolved = resolveRoadmapRoot(linked, {});
+    expect(() => assertCanonicalBranch(resolved, {})).toThrow(/"main"/);
+  });
+
+  it("finds .git above a roadmap root that is a subdirectory of a repo", () => {
+    fs.writeFileSync(path.join(primary, ".git", "HEAD"), "ref: refs/heads/feat/other\n");
+    const sub = path.join(primary, "tools");
+    fs.mkdirSync(sub);
+    expect(() => assertCanonicalBranch({ root: sub, rule: "env" }, {})).toThrow(/feat\/other/);
   });
 });
