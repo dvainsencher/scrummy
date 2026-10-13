@@ -81,6 +81,7 @@ has a spec file or progress-log entries worth reading before acting — `scrummy
 ## Diagnostics
 
 ```
+scrummy where                                # print the resolved roadmap root and which rule picked it
 scrummy validate                             # check docs/roadmap/* for invariant violations
                                              #   (duplicate issue ids, duplicate sprint names) —
                                              #   exits non-zero and lists what it found
@@ -92,9 +93,28 @@ on their own; `validate` exists to catch the cases that bypass them (a bad merge
 conflict resolution, a manual edit to `docs/roadmap/*`) independently of how they
 happened. Safe to run any time, including in CI.
 
+## Roadmap root across worktrees
+
+Every command resolves one canonical roadmap root, so all worktrees of a project share
+one backlog, one lock and one id sequence. First match wins:
+
+1. `SCRUMMY_ROOT` environment variable;
+2. `roadmapRoot` in `docs/roadmap/config.json` (path relative to the current directory);
+3. the current directory is a linked git worktree and its primary checkout has a
+   `docs/roadmap/` — the primary checkout is used;
+4. the current directory.
+
+`scrummy where` shows the result. When the root was redirected (rules 1–3), mutating
+commands refuse to run unless the canonical checkout is on the main branch (`main`, or
+`mainBranch` in `config.json`), so roadmap files can't land on a feature branch. Override
+with `--allow-branch` or `SCRUMMY_ALLOW_BRANCH=1`. A plain checkout (rule 4) is not
+guarded. scrummy never commits: committing the canonical checkout stays up to you.
+
 ## Environment variables
 
 ```
+SCRUMMY_ROOT=<path>                          # use this directory as the roadmap root
+SCRUMMY_ALLOW_BRANCH=1                       # skip the canonical-branch guard
 SCRUMMY_NO_LOCK=1                            # skip the mutation lock entirely
 ```
 

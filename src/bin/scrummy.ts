@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { commandDescriptions, commands, roadmapMutatingCommands } from "../cli/registry.js";
+import { commandDescriptions, commands, localCwdCommands, roadmapMutatingCommands } from "../cli/registry.js";
 import { buildUsageText } from "../cli/usage.js";
 import { generateRoadmapMarkdown } from "../cli/commands/roadmap.js";
 import { withRoadmapLock } from "../storage/lock.js";
 import { migrateRoadmapLayout } from "../storage/migrate.js";
+import { assertCanonicalBranch, resolveRoadmapRoot } from "../storage/root.js";
 
 export function isEntryPoint(argv1: string | undefined, moduleUrl: string): boolean {
   if (argv1 === undefined) {
@@ -26,7 +27,9 @@ export interface MainIO {
 }
 
 export function main(io: MainIO): number {
-  const [commandName, ...rest] = io.argv;
+  const [commandName, ...args] = io.argv;
+  const allowBranch = args.includes("--allow-branch");
+  const rest = args.filter((arg) => arg !== "--allow-branch");
 
   if (commandName === undefined || commandName === "--help" || commandName === "-h") {
     io.stdout(`${buildUsageText(commands, commandDescriptions)}\n`);
@@ -45,23 +48,31 @@ export function main(io: MainIO): number {
     // silently discards one. Serializing here — around the regen too, since that reads the
     // files back — is the single choke point that covers every command, present and future.
     const mutating = roadmapMutatingCommands.has(commandName);
+    // Every worktree of a project shares one roadmap, so resolve once and thread the
+    // canonical root through as the `cwd` every handler already takes. A few commands act
+    // on the directory the user is actually in instead.
+    const resolved = resolveRoadmapRoot(io.cwd);
+    if (mutating) {
+      assertCanonicalBranch(resolved, io.cwd, process.env, { allowBranch });
+    }
+    const commandCwd = localCwdCommands.has(commandName) ? io.cwd : resolved.root;
     const runCommand = (): string | void => {
       if (mutating) {
         // Convert a pre-directory layout in one atomic step, under the lock, before any
         // command touches it. No-op once converted. See storage/migrate.ts.
-        migrateRoadmapLayout(io.cwd);
+        migrateRoadmapLayout(commandCwd);
       }
-      const commandResult = handler(io.cwd, rest);
+      const commandResult = handler(commandCwd, rest);
       if (mutating) {
         try {
-          generateRoadmapMarkdown(io.cwd);
+          generateRoadmapMarkdown(commandCwd);
         } catch {
           // best-effort — mutation already committed, don't mask the success
         }
       }
       return commandResult;
     };
-    const result = mutating ? withRoadmapLock(io.cwd, runCommand) : runCommand();
+    const result = mutating ? withRoadmapLock(commandCwd, runCommand) : runCommand();
     if (result !== undefined) {
       io.stdout(`${result}\n`);
     }

@@ -114,3 +114,62 @@ describe("isEntryPoint", () => {
     expect(isEntryPoint(undefined, scrummyUrl)).toBe(false);
   });
 });
+
+describe("main in a linked worktree", () => {
+  let tmp: string;
+  let primary: string;
+  let linked: string;
+  let out: string[];
+  let err: string[];
+
+  function run(argv: string[], cwd: string) {
+    return main({ argv, cwd, stdout: (t) => out.push(t), stderr: (t) => err.push(t) });
+  }
+
+  beforeEach(() => {
+    tmp = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "scrummy-wt-")));
+    primary = path.join(tmp, "primary");
+    linked = path.join(tmp, "linked");
+    out = [];
+    err = [];
+    const adminDir = path.join(primary, ".git", "worktrees", "linked");
+    fs.mkdirSync(adminDir, { recursive: true });
+    fs.writeFileSync(path.join(primary, ".git", "HEAD"), "ref: refs/heads/main\n");
+    fs.writeFileSync(path.join(adminDir, "commondir"), "../..\n");
+    fs.mkdirSync(linked);
+    fs.writeFileSync(path.join(linked, ".git"), `gitdir: ${adminDir}\n`);
+    expect(run(["init"], primary)).toBe(0);
+    out = [];
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
+
+  it("writes to the primary checkout and shares ids across worktrees", () => {
+    expect(run(["add-issue", "from primary"], primary)).toBe(0);
+    expect(run(["add-issue", "from linked"], linked)).toBe(0);
+    expect(out.join("").trim().split("\n")).toEqual(["1", "2"]);
+    expect(fs.existsSync(path.join(linked, "docs"))).toBe(false);
+    expect(fs.existsSync(path.join(primary, "docs", "roadmap", "issues", "2.json"))).toBe(true);
+  });
+
+  it("refuses a mutation while the primary checkout is on a feature branch", () => {
+    fs.writeFileSync(path.join(primary, ".git", "HEAD"), "ref: refs/heads/feat/x\n");
+    expect(run(["add-issue", "nope"], linked)).toBe(1);
+    expect(err.join("")).toContain("feat/x");
+    expect(run(["add-issue", "forced", "--allow-branch"], linked)).toBe(0);
+  });
+
+  it("still lets reads through on a feature branch", () => {
+    fs.writeFileSync(path.join(primary, ".git", "HEAD"), "ref: refs/heads/feat/x\n");
+    expect(run(["show"], linked)).toBe(0);
+  });
+
+  it("`where` reports the resolved root and the rule", () => {
+    expect(run(["where"], linked)).toBe(0);
+    const text = out.join("");
+    expect(text).toContain(primary);
+    expect(text).toContain("linked git worktree");
+  });
+});
