@@ -12,6 +12,8 @@ import { KanbanApp, computeLayout, buildViewData } from "./view.js";
 import { init } from "./init.js";
 import { addIssue } from "./addIssue.js";
 import { setStatus } from "./setStatus.js";
+import { createSprint } from "./createSprint.js";
+import { move } from "./move.js";
 import type { KanbanData } from "./kanban.js";
 
 function makeData(overrides: Partial<KanbanData> = {}): KanbanData {
@@ -269,6 +271,65 @@ describe("buildViewData", () => {
     setStatus(cwd, id, "done");
     const { data } = buildViewData(cwd);
     expect(data.columns.done.map((i) => i.id)).toContain(id);
+  });
+});
+
+describe("KanbanApp live refresh", () => {
+  let cwd: string;
+  const tick = (ms = 150) => act(async () => { await new Promise((r) => setTimeout(r, ms)); });
+
+  beforeEach(() => {
+    cwd = fs.mkdtempSync(path.join(os.tmpdir(), "scrummy-live-"));
+    init(cwd);
+  });
+
+  afterEach(() => {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  });
+
+  it("moves a card to its new column when status changes on disk", async () => {
+    const id = addIssue(cwd, "Live card");
+    const { plan, data } = buildViewData(cwd);
+    const { lastFrame, unmount } = render(<KanbanApp data={data} plan={plan} cwd={cwd} refreshIntervalMs={20} />);
+    setStatus(cwd, id, "done");
+    await tick();
+    const lines = (lastFrame() ?? "").split("\n");
+    const line = lines.find((l) => l.includes("Live card")) ?? "";
+    // Card is now in the rightmost (DONE) column, not the leftmost.
+    expect(line.indexOf("Live card")).toBeGreaterThan(line.length / 2);
+    unmount();
+  });
+
+  it("shows new sprint name on card and in the sprint board without reload", async () => {
+    const id = addIssue(cwd, "Sprinted");
+    createSprint(cwd, "alpha", { goal: "g" });
+    const { plan, data } = buildViewData(cwd);
+    const { lastFrame, stdin, unmount } = render(<KanbanApp data={data} plan={plan} cwd={cwd} refreshIntervalMs={20} />);
+    expect(lastFrame() ?? "").not.toContain("alpha");
+    move(cwd, id, "alpha");
+    setStatus(cwd, id, "doing");
+    createSprint(cwd, "beta-new", { goal: "g" });
+    await tick();
+    expect(lastFrame() ?? "").toContain("alpha");
+    await act(async () => { stdin.write("s"); });
+    await tick(30);
+    expect(lastFrame() ?? "").toContain("beta-new");
+    unmount();
+  });
+
+  it("stays on the backlog view across a refresh", async () => {
+    const id = addIssue(cwd, "In backlog");
+    createSprint(cwd, "alpha", { goal: "g" });
+    const other = addIssue(cwd, "Other");
+    move(cwd, other, "alpha");
+    const { plan, data } = buildViewData(cwd);
+    const { lastFrame, stdin, unmount } = render(<KanbanApp data={data} plan={plan} cwd={cwd} refreshIntervalMs={20} />);
+    await act(async () => { stdin.write("b"); });
+    setStatus(cwd, id, "ready");
+    await tick();
+    expect(lastFrame() ?? "").toContain("backlog");
+    expect(lastFrame() ?? "").toContain("In backlog");
+    unmount();
   });
 });
 

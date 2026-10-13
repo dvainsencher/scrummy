@@ -47,6 +47,7 @@ scrummy status                               # one-line summary of the active sp
 scrummy view                                 # interactive terminal kanban board (Ink TUI); press S for the
                                              #   sprint board — every sprint laid out in ACTIVE | PLANNED | DONE
                                              #   columns by derived status; Enter drills into a sprint's issues
+                                             #   The board refreshes itself (~1s) when roadmap files change, keeping your cursor and view
 ```
 
 Default `show` output:
