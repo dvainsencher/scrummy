@@ -15,16 +15,20 @@ export function editIssue(cwd: string, id: number, options: EditIssueOptions): s
   }
 
   const now = new Date().toISOString();
-  const updated = issues.map((issue) =>
-    issue.id === id
-      ? {
-          ...issue,
-          title: options.title ?? issue.title,
-          status: (options.status as IssueStatus | undefined) ?? issue.status,
-          updatedAt: now,
-        }
-      : issue,
-  );
+  const updated = issues.map((issue) => {
+    if (issue.id !== id) {
+      return issue;
+    }
+    const { assignee, claimedAt, leaseUntil, ...unclaimed } = issue;
+    const edited = {
+      ...unclaimed,
+      title: options.title ?? issue.title,
+      status: (options.status as IssueStatus | undefined) ?? issue.status,
+      updatedAt: now,
+    };
+    // Finishing an issue ends its claim.
+    return edited.status === "done" ? edited : { ...edited, assignee, claimedAt, leaseUntil };
+  });
 
   writeIssues(cwd, updated);
   return `Updated issue #${id}`;

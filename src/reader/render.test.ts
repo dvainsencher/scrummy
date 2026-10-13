@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Plan } from "./plan.js";
-import { renderJson, renderPretty, renderRoadmapMarkdown } from "./render.js";
+import { renderIssueLine, renderJson, renderPretty, renderRoadmapMarkdown } from "./render.js";
 
 function plan(overrides: Partial<Plan> = {}): Plan {
   return { backlog: [], sprints: [], ...overrides };
@@ -248,5 +248,24 @@ describe("renderRoadmapMarkdown", () => {
     });
     const out = renderRoadmapMarkdown(p);
     expect(out).toContain("- [x] #7 Done in sprint");
+  });
+});
+
+describe("renderIssueLine claims", () => {
+  const view = {
+    id: 3, title: "T", status: "doing" as const, sprint: "", createdAt: "", updatedAt: "",
+    hasSpec: false, hasLog: false,
+  };
+
+  it("shows nothing for an unclaimed issue", () => {
+    expect(renderIssueLine(view)).not.toContain("@");
+  });
+
+  it("shows the holder, and flags an expired lease", () => {
+    const live = { ...view, assignee: "alice", leaseUntil: "2999-01-01T00:00:00.000Z" };
+    expect(renderIssueLine(live)).toContain("@alice");
+    expect(renderIssueLine(live)).not.toContain("expired");
+    const stale = { ...view, assignee: "alice", leaseUntil: "2000-01-01T00:00:00.000Z" };
+    expect(renderIssueLine(stale)).toContain("@alice (lease expired)");
   });
 });

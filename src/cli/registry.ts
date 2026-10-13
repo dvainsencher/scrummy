@@ -20,9 +20,25 @@ import { status } from "./commands/status.js";
 import { validate } from "./commands/validate.js";
 import { skillsSourceDir } from "../packageRoot.js";
 import { describeRoot, resolveRoadmapRoot } from "../storage/root.js";
+import { claimIssue, nextIssue, releaseIssue, renewIssue } from "./commands/claim.js";
+import { resolveAgent } from "../domain/claims.js";
 import { parseArgs, requireIntPositional, requirePositional } from "./parse.js";
 
-export type CommandHandler = (cwd: string, args: string[]) => string | void;
+/** `localCwd` is the directory the user ran scrummy in, which differs from `cwd` (the roadmap root) in a worktree. */
+export interface CommandContext {
+  localCwd: string;
+  env: Record<string, string | undefined>;
+}
+
+export type CommandHandler = (cwd: string, args: string[], context?: CommandContext) => string | void;
+
+function claimOptions(parsed: ReturnType<typeof parseArgs>, context: CommandContext | undefined, cwd: string) {
+  return {
+    agent: resolveAgent(parsed.flags.as, context?.env ?? process.env, context?.localCwd ?? cwd),
+    lease: typeof parsed.flags.lease === "string" ? parsed.flags.lease : undefined,
+    steal: parsed.flags.steal === true,
+  };
+}
 
 export const commands: Record<string, CommandHandler> = {
   init: (cwd) => init(cwd),
@@ -99,6 +115,30 @@ export const commands: Record<string, CommandHandler> = {
     const id = requireIntPositional(parsed, 0, "id");
     const status = requirePositional(parsed, 1, "status");
     return setStatus(cwd, id, status);
+  },
+
+  claim: (cwd, args, context) => {
+    const parsed = parseArgs(args);
+    return claimIssue(cwd, requireIntPositional(parsed, 0, "id"), claimOptions(parsed, context, cwd));
+  },
+
+  release: (cwd, args, context) => {
+    const parsed = parseArgs(args);
+    return releaseIssue(cwd, requireIntPositional(parsed, 0, "id"), claimOptions(parsed, context, cwd));
+  },
+
+  renew: (cwd, args, context) => {
+    const parsed = parseArgs(args);
+    return renewIssue(cwd, requireIntPositional(parsed, 0, "id"), claimOptions(parsed, context, cwd));
+  },
+
+  next: (cwd, args, context) => {
+    const parsed = parseArgs(args);
+    return nextIssue(cwd, {
+      ...claimOptions(parsed, context, cwd),
+      sprint: typeof parsed.flags.sprint === "string" ? parsed.flags.sprint : undefined,
+      claim: parsed.flags.claim === true,
+    });
   },
 
   "set-position": (cwd, args) => {
@@ -183,7 +223,15 @@ export const roadmapMutatingCommands: ReadonlySet<string> = new Set([
   "move",
   "set-status",
   "set-position",
+  "claim",
+  "release",
+  "renew",
 ]);
+
+/** `next` only writes when asked to claim; every other mutating command always does. */
+export function isMutating(commandName: string, args: readonly string[]): boolean {
+  return roadmapMutatingCommands.has(commandName) || (commandName === "next" && args.includes("--claim"));
+}
 
 export const commandDescriptions: Record<string, string> = {
   init: "Scaffold docs/roadmap/ in a project",
@@ -202,6 +250,10 @@ export const commandDescriptions: Record<string, string> = {
   "show-log": "Show an issue's progress log",
   show: "Show the backlog and sprints",
   "install-skills": "Install scrummy's Claude Code skills into this project",
+  claim: "Claim an issue for this agent (sets it to doing, with a lease)",
+  release: "Release your claim on an issue",
+  renew: "Extend the lease on an issue you hold",
+  next: "Show the next ready unclaimed issue; --claim also claims it",
   where: "Print the resolved roadmap root and which rule picked it",
   status: "Print a one-line summary of the active sprint",
   validate: "Check docs/roadmap/* for invariant violations (e.g. duplicate ids or sprint names)",

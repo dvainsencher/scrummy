@@ -92,4 +92,27 @@ describe("concurrent mutating commands", () => {
     expect(sprints).toHaveLength(count);
     expect(new Set(sprints.map((sprint) => sprint.name)).size).toBe(count);
   }, 120_000);
+
+  it("lets exactly one of many racing claim processes win", async () => {
+    main({ argv: ["add-issue", "contested", "--status", "ready"], cwd, stdout: () => {}, stderr: () => {} });
+    const count = 10;
+    const exits = await runConcurrently(cwd, count, (i) => ["claim", "1", "--as", `agent-${i}`]);
+    expect(exits.filter((code) => code === 0)).toHaveLength(1);
+    const [issue] = readIssues(cwd);
+    expect(issue.status).toBe("doing");
+    expect(issue.assignee).toBe(`agent-${exits.indexOf(0)}`);
+  }, 120_000);
+
+  it("hands each racing next --claim process a different issue", async () => {
+    const count = 6;
+    for (let i = 0; i < count; i++) {
+      main({ argv: ["add-issue", `job ${i}`, "--status", "ready"], cwd, stdout: () => {}, stderr: () => {} });
+    }
+    const exits = await runConcurrently(cwd, count + 2, (i) => ["next", "--claim", "--as", `agent-${i}`]);
+    // Two more agents than jobs: exactly `count` succeed, the rest find nothing.
+    expect(exits.filter((code) => code === 0)).toHaveLength(count);
+    const assignees = readIssues(cwd).map((issue) => issue.assignee);
+    expect(assignees.every((a) => a !== undefined)).toBe(true);
+    expect(new Set(assignees).size).toBe(count);
+  }, 120_000);
 });

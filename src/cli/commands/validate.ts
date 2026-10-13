@@ -1,3 +1,4 @@
+import { claimState } from "../../domain/claims.js";
 import { assertNoDuplicateIds, assertNoDuplicateSprintNames } from "../../domain/validation.js";
 import { readIssues } from "../../storage/issuesStore.js";
 import { readSprints } from "../../storage/sprintsStore.js";
@@ -12,5 +13,10 @@ export function validate(cwd: string): string {
   assertNoDuplicateIds(issues);
   assertNoDuplicateSprintNames(sprints);
 
-  return `OK: ${issues.length} issue(s), ${sprints.length} sprint(s), no duplicates found`;
+  // Stale claims are state to look at, not corruption, so they warn instead of failing.
+  const warnings = issues
+    .filter((issue) => claimState(issue) === "expired")
+    .map((issue) => `\nWARN: #${issue.id} claim by ${issue.assignee} expired at ${issue.leaseUntil}`);
+
+  return `OK: ${issues.length} issue(s), ${sprints.length} sprint(s), no duplicates found${warnings.join("")}`;
 }

@@ -34,6 +34,27 @@ scrummy install-skills                       # copy the Claude Code skill files 
 scrummy roadmap                               # regenerate ROADMAP.md on demand (also runs automatically after every writer above)
 ```
 
+## Claims (several agents, one backlog)
+
+```
+scrummy claim <id> [--lease 2h] [--steal]    # take an issue: sets it to doing, records you as assignee
+scrummy release <id> [--steal]               # give it up: clears the claim, doing goes back to ready
+scrummy renew <id> [--lease 2h]              # extend the lease on an issue you hold
+scrummy next [--sprint <name>] [--claim]     # the next ready, unclaimed issue; --claim also claims it
+```
+
+All of them run under the roadmap lock, so of N concurrent `claim` / `next --claim` calls
+exactly one wins an issue. Identity is `--as <name>`, then `SCRUMMY_AGENT`, then the name of
+the directory you ran scrummy in (the worktree name). A claim is a lease (default `2h`,
+units `s m h d`): once it expires anyone can claim the issue again, and `next` offers it
+again, even if it is still `doing`. Claiming your own issue again just extends it.
+`--steal` takes over or releases a live lease. `set-status <id> done` clears the claim.
+`doing` without a claim stays allowed. `next` walks active sprints first, then by sprint
+position, then the backlog; within each by id. It exits non-zero when nothing is available.
+
+`show`, `show --json` and the viewer display the assignee (`@name`) and flag an expired
+lease; `validate` prints a `WARN` line for each expired claim without failing.
+
 ## Reader (the linchpin — rich enough that the agent never opens raw files)
 
 By default, done issues and done sprints are hidden — `--done` reveals them.
@@ -113,6 +134,7 @@ with `--allow-branch` or `SCRUMMY_ALLOW_BRANCH=1`. scrummy never commits: commit
 ```
 SCRUMMY_ROOT=<path>                          # use this directory as the roadmap root
 SCRUMMY_ALLOW_BRANCH=1                       # skip the canonical-branch guard
+SCRUMMY_AGENT=<name>                         # agent identity for claim/release/renew/next
 SCRUMMY_NO_LOCK=1                            # skip the mutation lock entirely
 ```
 

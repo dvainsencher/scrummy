@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { commandDescriptions, commands, localCwdCommands, roadmapMutatingCommands } from "../cli/registry.js";
+import { commandDescriptions, commands, isMutating, localCwdCommands } from "../cli/registry.js";
 import { buildUsageText } from "../cli/usage.js";
 import { generateRoadmapMarkdown } from "../cli/commands/roadmap.js";
 import { withRoadmapLock } from "../storage/lock.js";
@@ -47,7 +47,7 @@ export function main(io: MainIO): number {
     // Mutating commands are read → modify → write-whole-file, so two of them overlapping
     // silently discards one. Serializing here — around the regen too, since that reads the
     // files back — is the single choke point that covers every command, present and future.
-    const mutating = roadmapMutatingCommands.has(commandName);
+    const mutating = isMutating(commandName, rest);
     // Every worktree of a project shares one roadmap, so resolve once and thread the
     // canonical root through as the `cwd` every handler already takes. A few commands act
     // on the directory the user is actually in instead.
@@ -64,7 +64,7 @@ export function main(io: MainIO): number {
         // command touches it. No-op once converted. See storage/migrate.ts.
         migrateRoadmapLayout(commandCwd);
       }
-      const commandResult = handler(commandCwd, rest);
+      const commandResult = handler(commandCwd, rest, { localCwd: io.cwd, env: process.env });
       if (mutating) {
         try {
           generateRoadmapMarkdown(commandCwd);
