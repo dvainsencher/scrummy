@@ -30,7 +30,7 @@ function gitOrThrow(cwd: string, args: string[]): void {
 
 function scrummy(cwd: string, argv: string[]): void {
   const errors: string[] = [];
-  const code = main({ argv, cwd, stdout: () => {}, stderr: (text) => errors.push(text) });
+  const code = main({ argv: [...argv, "--allow-branch"], cwd, stdout: () => {}, stderr: (text) => errors.push(text) });
   if (code !== 0) {
     throw new Error(`scrummy ${argv.join(" ")} failed: ${errors.join("")}`);
   }

@@ -104,11 +104,9 @@ one backlog, one lock and one id sequence. First match wins:
    `docs/roadmap/` — the primary checkout is used;
 4. the current directory.
 
-`scrummy where` shows the result. When the root was redirected (rules 1–3), mutating
-commands refuse to run unless the canonical checkout is on the main branch (`main`, or
+`scrummy where` shows the result. Mutating commands refuse to run unless the root's checkout is on the main branch (`main`, or
 `mainBranch` in `config.json`), so roadmap files can't land on a feature branch. Override
-with `--allow-branch` or `SCRUMMY_ALLOW_BRANCH=1`. A plain checkout (rule 4) is not
-guarded. scrummy never commits: committing the canonical checkout stays up to you.
+with `--allow-branch` or `SCRUMMY_ALLOW_BRANCH=1`. scrummy never commits: committing the canonical checkout stays up to you.
 
 ## Environment variables
 

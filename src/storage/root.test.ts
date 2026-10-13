@@ -117,9 +117,9 @@ describe("assertCanonicalBranch", () => {
     expect(() => assertCanonicalBranch(resolved, linked, { SCRUMMY_ALLOW_BRANCH: "1" })).not.toThrow();
   });
 
-  it("does not guard a plain checkout working on its own branch", () => {
+  it("also guards a plain checkout that is on a feature branch", () => {
     fs.writeFileSync(path.join(primary, ".git", "HEAD"), "ref: refs/heads/feat/mine\n");
     const resolved = resolveRoadmapRoot(primary, {});
-    expect(() => assertCanonicalBranch(resolved, primary, {})).not.toThrow();
+    expect(() => assertCanonicalBranch(resolved, primary, {})).toThrow(/feat\/mine/);
   });
 });

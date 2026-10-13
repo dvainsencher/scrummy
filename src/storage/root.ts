@@ -103,8 +103,8 @@ export interface GuardOptions {
 
 /**
  * Refuses a mutation when the canonical checkout is not on the main branch, so roadmap
- * files can't land on a feature branch by accident. Only guards a *redirected* root: a
- * plain checkout mutates its own roadmap on whatever branch the user chose.
+ * files can't land on a feature branch by accident. Applies to every root, including a
+ * plain checkout; `--allow-branch` / SCRUMMY_ALLOW_BRANCH=1 is the escape hatch.
  */
 export function assertCanonicalBranch(
   resolved: ResolvedRoot,
@@ -112,7 +112,7 @@ export function assertCanonicalBranch(
   env: Env = process.env,
   options: GuardOptions = {},
 ): void {
-  if (resolved.rule === "cwd" || options.allowBranch || env.SCRUMMY_ALLOW_BRANCH) {
+  if (options.allowBranch || env.SCRUMMY_ALLOW_BRANCH) {
     return;
   }
   const gitDir = gitDirOf(resolved.root);
