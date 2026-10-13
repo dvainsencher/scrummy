@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Box, Text, useInput, useStdout } from "ink";
 import type { IssueView } from "../../reader/plan.js";
 import type { ProgressEntry } from "../../domain/types.js";
+import { claimState } from "../../domain/claims.js";
 
 const ENTRY_COLORS: Record<string, string> = {
   plan: "blue",
@@ -69,6 +70,8 @@ export function CardDetail({ issue, spec, log, onClose }: CardDetailProps) {
         <Text>{issue.status}</Text>
         <Text dimColor>  sprint: </Text>
         <Text>{issue.sprint || "(backlog)"}</Text>
+        {issue.assignee && <Text dimColor>  claimed by: </Text>}
+        {issue.assignee && <Text>{issue.assignee}{claimState(issue) === "expired" ? " (lease expired)" : ""}</Text>}
       </Box>
 
       {hiddenAbove > 0 && <Text dimColor>  ↑ {hiddenAbove} more</Text>}

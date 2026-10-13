@@ -9,6 +9,10 @@ export interface Issue {
   sprint: string;
   createdAt: string;
   updatedAt: string;
+  // Claim: which agent is working on the issue, and until when. See domain/claims.ts.
+  assignee?: string;
+  claimedAt?: string;
+  leaseUntil?: string;
 }
 
 // Sprint status is NOT stored — it is derived from the sprint's issues at read time

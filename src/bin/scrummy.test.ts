@@ -180,3 +180,16 @@ describe("main in a linked worktree", () => {
     expect(run(["init"], fresh)).toBe(0);
   });
 });
+
+import { isMutating } from "../cli/registry.js";
+
+describe("isMutating", () => {
+  it("treats claim commands as mutating and next only with --claim", () => {
+    expect(isMutating("claim", ["1"])).toBe(true);
+    expect(isMutating("release", ["1"])).toBe(true);
+    expect(isMutating("renew", ["1"])).toBe(true);
+    expect(isMutating("next", [])).toBe(false);
+    expect(isMutating("next", ["--claim"])).toBe(true);
+    expect(isMutating("show", [])).toBe(false);
+  });
+});

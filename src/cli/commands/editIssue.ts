@@ -1,4 +1,5 @@
 import type { IssueStatus } from "../../domain/types.js";
+import { withoutClaim } from "../../domain/claims.js";
 import { assertIssueExists, assertIssueStatus } from "../../domain/validation.js";
 import { readIssues, writeIssues } from "../../storage/issuesStore.js";
 
@@ -15,16 +16,15 @@ export function editIssue(cwd: string, id: number, options: EditIssueOptions): s
   }
 
   const now = new Date().toISOString();
-  const updated = issues.map((issue) =>
-    issue.id === id
-      ? {
-          ...issue,
-          title: options.title ?? issue.title,
-          status: (options.status as IssueStatus | undefined) ?? issue.status,
-          updatedAt: now,
-        }
-      : issue,
-  );
+  const updated = issues.map((issue) => {
+    if (issue.id !== id) {
+      return issue;
+    }
+    const status = (options.status as IssueStatus | undefined) ?? issue.status;
+    const edited = { ...issue, title: options.title ?? issue.title, status, updatedAt: now };
+    // A claim only makes sense while the issue is being worked on.
+    return status === "doing" ? edited : withoutClaim(edited);
+  });
 
   writeIssues(cwd, updated);
   return `Updated issue #${id}`;

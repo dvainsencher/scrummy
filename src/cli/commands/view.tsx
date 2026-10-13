@@ -4,6 +4,7 @@ import fs from "node:fs";
 import type { IssueView, Plan } from "../../reader/plan.js";
 import type { IssueStatus, ProgressEntry } from "../../domain/types.js";
 import { ISSUE_STATUSES } from "../../domain/types.js";
+import { claimState } from "../../domain/claims.js";
 import { specFilePath } from "../../storage/paths.js";
 import { readProgress } from "../../storage/progressStore.js";
 import { buildKanbanData, selectKanbanView, type KanbanData } from "./kanban.js";
@@ -46,7 +47,13 @@ const STATUS_COLORS: Record<IssueStatus, string> = {
 
 function Card({ issue, selected, width }: { issue: IssueView; selected: boolean; width: number }) {
   const badge = STATUS_COLORS[issue.status];
-  const indicators = [issue.hasSpec ? "S" : "", issue.hasLog ? "L" : ""].filter(Boolean).join(" ");
+  const indicators = [
+    issue.hasSpec ? "S" : "",
+    issue.hasLog ? "L" : "",
+    issue.assignee ? `@${issue.assignee}${claimState(issue) === "expired" ? "!" : ""}` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
   return (
     <Box
       flexDirection="column"

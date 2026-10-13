@@ -1,3 +1,4 @@
+import { claimState } from "../domain/claims.js";
 import type { IssueView, Plan, SprintGroup } from "./plan.js";
 
 export function renderJson(plan: Plan): string {
@@ -36,7 +37,15 @@ function renderSprintHeader(sprint: SprintGroup): string {
 export function renderIssueLine(issue: IssueView): string {
   const specTag = issue.hasSpec ? "  [spec]" : "";
   const logTag = issue.hasLog ? "  [log]" : "";
-  return `  #${issue.id}  ${issue.status.padEnd(5)} ${issue.title}${specTag}${logTag}`;
+  return `  #${issue.id}  ${issue.status.padEnd(5)} ${issue.title}${specTag}${logTag}${renderClaim(issue)}`;
+}
+
+export function renderClaim(issue: IssueView): string {
+  const state = claimState(issue);
+  if (state === "free") {
+    return "";
+  }
+  return `  @${issue.assignee}${state === "expired" ? " (lease expired)" : ""}`;
 }
 
 export function renderRoadmapMarkdown(plan: Plan): string {

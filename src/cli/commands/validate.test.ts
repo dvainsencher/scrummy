@@ -79,4 +79,20 @@ describe("validate", () => {
 
     expect(() => validate(cwd)).toThrow(/foundation/);
   });
+
+  it("warns about expired claims without failing", () => {
+    const id = addIssue(cwd, "stale", { status: "doing" });
+    writeIssues(
+      cwd,
+      readIssues(cwd).map((issue) => ({
+        ...issue,
+        assignee: "alice",
+        claimedAt: "2026-01-01T00:00:00.000Z",
+        leaseUntil: "2026-01-01T02:00:00.000Z",
+      })),
+    );
+    const out = validate(cwd);
+    expect(out).toMatch(/^OK:/);
+    expect(out).toContain(`WARN: #${id} claim by alice expired`);
+  });
 });

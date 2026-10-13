@@ -3,7 +3,7 @@ import type { Issue } from "../domain/types.js";
 import { issuesDir, legacyIssuesFilePath } from "./paths.js";
 import { readRecordDir, serializeRecord, syncRecordDir } from "./recordDir.js";
 
-const ISSUE_KEYS = ["id", "title", "status", "sprint", "createdAt", "updatedAt"] as const;
+const ISSUE_KEYS = ["id", "title", "status", "sprint", "createdAt", "updatedAt", "assignee", "claimedAt", "leaseUntil"] as const;
 
 function readLegacyIssues(cwd: string): Issue[] {
   const filePath = legacyIssuesFilePath(cwd);
