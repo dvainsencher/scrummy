@@ -7,6 +7,10 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { addIssue } from "../cli/commands/addIssue.js";
 import { claimIssue, releaseIssue, renewIssue } from "../cli/commands/claim.js";
 import { createSprint } from "../cli/commands/createSprint.js";
+import { editIssue } from "../cli/commands/editIssue.js";
+import { removeSprint } from "../cli/commands/removeSprint.js";
+import { setPosition } from "../cli/commands/setPosition.js";
+import { spec } from "../cli/commands/spec.js";
 import { editSprint } from "../cli/commands/editSprint.js";
 import { init } from "../cli/commands/init.js";
 import { move } from "../cli/commands/move.js";
@@ -75,6 +79,28 @@ describe("diffSnapshots", () => {
     expect(changes(() => releaseIssue(cwd, id, { agent: "alice", now: T0 }))).toEqual([
       { type: "claim.released", id, title: "A", assignee: "alice" },
     ]);
+  });
+
+  it("reports title, sprint-removal and position changes, and ignores spec files", () => {
+    const id = addIssue(cwd, "A");
+    createSprint(cwd, "s1", { goal: "g" });
+    expect(changes(() => editIssue(cwd, id, { title: "B" }))).toEqual([
+      { type: "issue.changed", id, title: "B", changes: { title: { from: "A", to: "B" } } },
+    ]);
+    expect(changes(() => setPosition(cwd, "s1", 5))).toEqual([
+      { type: "sprint.changed", name: "s1", changes: { position: { from: 10, to: 5 } } },
+    ]);
+    expect(changes(() => spec(cwd, id))).toEqual([]);
+    expect(changes(() => removeSprint(cwd, "s1"))).toEqual([{ type: "sprint.removed", name: "s1" }]);
+  });
+
+  it("keeps an unrelated status change next to a claim event", () => {
+    const id = addIssue(cwd, "A", { status: "idea" });
+    const events = changes(() => {
+      claimIssue(cwd, id, { agent: "alice" });
+      editIssue(cwd, id, { title: "A2" });
+    });
+    expect(events.map((e) => e.type).sort()).toEqual(["claim.acquired", "issue.changed"]);
   });
 
   it("reports a takeover with the previous holder", () => {
@@ -163,5 +189,46 @@ describe("watchRoadmap", () => {
       shouldStop: () => tick >= 3,
     });
     expect(events).toEqual([{ type: "issue.added", id: 9, title: "ok", status: "idea" }]);
+  });
+
+  it("warns after repeated unreadable ticks, once, and again when it recovers", () => {
+    const warnings: string[] = [];
+    const bad = path.join(cwd, "docs", "roadmap", "issues", "9.json");
+    let tick = 0;
+    watchRoadmap(cwd, {
+      emit: () => {},
+      warn: (message) => warnings.push(message),
+      intervalMs: 0,
+      sleep: () => {
+        tick++;
+        if (tick === 1) fs.writeFileSync(bad, "{ not json");
+        if (tick > 1 && tick < 8) fs.writeFileSync(bad, `{ not json ${tick}`);
+        if (tick === 8) fs.rmSync(bad);
+      },
+      shouldStop: () => tick >= 9,
+    });
+    expect(warnings).toHaveLength(2);
+    expect(warnings[0]).toMatch(/cannot read/i);
+    expect(warnings[1]).toMatch(/recovered/i);
+  });
+
+  it("retries the first snapshot instead of crashing", () => {
+    const events: WatchEvent[] = [];
+    const bad = path.join(cwd, "docs", "roadmap", "issues", "9.json");
+    fs.writeFileSync(bad, "{ not json");
+    let tick = 0;
+    let ready = 0;
+    watchRoadmap(cwd, {
+      emit: (event) => events.push(event),
+      onReady: () => ready++,
+      intervalMs: 0,
+      sleep: () => {
+        tick++;
+        if (tick === 1) fs.rmSync(bad);
+      },
+      shouldStop: () => tick >= 2,
+    });
+    expect(ready).toBe(1);
+    expect(events).toEqual([]);
   });
 });

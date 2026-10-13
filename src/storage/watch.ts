@@ -157,30 +157,66 @@ export function diffSnapshots(before: Snapshot, after: Snapshot): WatchEvent[] {
 
 export interface WatchOptions {
   emit: (event: WatchEvent) => void;
+  /** Called once the baseline snapshot exists, i.e. from here on no change is missed. */
+  onReady?: () => void;
+  /** Called when the roadmap stays unreadable for several ticks, and again on recovery. */
+  warn?: (message: string) => void;
   intervalMs?: number;
   /** Injectable for tests; the default blocks, like the rest of the synchronous CLI. */
   sleep?: (ms: number) => void;
   shouldStop?: () => boolean;
 }
 
+const WARN_AFTER_FAILURES = 5;
+
 /** Block, emitting an event for every change other processes make to the roadmap. */
 export function watchRoadmap(cwd: string, options: WatchOptions): void {
-  const { emit, intervalMs = 500, sleep = sleepSync, shouldStop = () => false } = options;
-  // Fingerprint first, so a write racing the snapshot is picked up on the next tick.
-  let last = fingerprint(cwd);
-  let previous = takeSnapshot(cwd);
-  while (!shouldStop()) {
-    sleep(intervalMs);
+  const { emit, onReady, warn, intervalMs = 500, sleep = sleepSync, shouldStop = () => false } = options;
+  let previous: Snapshot | undefined;
+  let last = "";
+  let failures = 0;
+  let warned = false;
+
+  const settled = () => {
+    if (warned) warn?.("Roadmap readable again — recovered");
+    failures = 0;
+    warned = false;
+  };
+
+  const failed = (error: unknown) => {
+    failures++;
+    // A half-written file clears itself within a tick or two; a persistent failure (bad
+    // merge, hand edit, permissions) would otherwise look exactly like a quiet roadmap.
+    if (failures === WARN_AFTER_FAILURES && !warned) {
+      warned = true;
+      warn?.(`Cannot read the roadmap, still retrying: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
+
+  // Fingerprint before the snapshot, so a write racing the snapshot is picked up next tick.
+  const refresh = (): void => {
     const current = fingerprint(cwd);
-    if (current === last) continue;
+    if (previous !== undefined && failures === 0 && current === last) return;
     let next: Snapshot;
     try {
       next = takeSnapshot(cwd);
-    } catch {
-      continue; // caught mid-write; `last` is unchanged so we retry next tick
+    } catch (error) {
+      failed(error); // `last` is unchanged, so we retry next tick
+      return;
     }
-    for (const event of diffSnapshots(previous, next)) emit(event);
+    settled();
+    if (previous === undefined) {
+      onReady?.();
+    } else {
+      for (const event of diffSnapshots(previous, next)) emit(event);
+    }
     previous = next;
     last = current;
+  };
+
+  refresh();
+  while (!shouldStop()) {
+    sleep(intervalMs);
+    refresh();
   }
 }

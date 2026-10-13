@@ -27,10 +27,10 @@ import { parseArgs, requireIntPositional, requirePositional } from "./parse.js";
 
 /** `localCwd` is the directory the user ran scrummy in, which differs from `cwd` (the roadmap root) in a worktree. */
 export interface CommandContext {
-  /** Streams a line to stdout while the command is still running (used by `watch`). */
-  write?: (text: string) => void;
   localCwd: string;
   env: Record<string, string | undefined>;
+  /** Streams text to stdout while the command is still running (used by `watch`). */
+  write?: (text: string) => void;
 }
 
 export type CommandHandler = (cwd: string, args: string[], context?: CommandContext) => string | void;
@@ -56,7 +56,9 @@ function describeEvent(event: WatchEvent): string {
     case "claim.renewed":
     case "claim.released":
       return `${event.type} #${event.id} ${event.title} @${event.assignee}`;
-    default:
+    case "issue.added":
+      return `${event.type} #${event.id} ${event.title} [${event.status}]`;
+    case "issue.removed":
       return `${event.type} #${event.id} ${event.title}`;
   }
 }
@@ -217,11 +219,13 @@ export const commands: Record<string, CommandHandler> = {
     if (!Number.isInteger(interval) || interval < 50) {
       throw new Error("Invalid --interval — expected a whole number of milliseconds, at least 50");
     }
-    if (!json) {
-      write(`Watching ${cwd} (Ctrl-C to stop)\n`);
-    }
+    // Status goes to stderr in both modes so stdout carries only events (a Monitor turns each
+    // stdout line into a notification) while a caller can still tell when watching began.
+    const note = (text: string) => process.stderr.write(`${text}\n`);
     watchRoadmap(cwd, {
       intervalMs: interval,
+      onReady: () => note(`Watching ${cwd} (Ctrl-C to stop)`),
+      warn: note,
       emit: (event) => write(json ? `${JSON.stringify(event)}\n` : `${describeEvent(event)}\n`),
     });
   },

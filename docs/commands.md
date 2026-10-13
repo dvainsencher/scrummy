@@ -84,7 +84,14 @@ not repeated as `issue.changed`. Marking a claimed issue `done` yields both
 `issue.changed` and `claim.released`. A lease running out is not a file change, so it
 produces no event; `show` and `validate` flag expired leases. There is no event log on
 disk: events are the diff between two snapshots, so changes made while `watch` is not
-running are not replayed.
+running are not replayed, and several changes inside one poll interval fold into their net
+effect (a manual `set-status doing` followed by a `claim` shows as just the claim).
+
+Events go to stdout and nothing else does; status goes to stderr: `Watching <root>` once the
+baseline is taken (nothing earlier is missed after that line), and a warning if the roadmap
+stays unreadable for several polls (a bad merge, a hand edit) and again when it recovers.
+`watch` exits with an error when its stdout is closed, so a killed `Monitor` doesn't leave
+an orphan polling forever.
 
 ## Reader (the linchpin — rich enough that the agent never opens raw files)
 
