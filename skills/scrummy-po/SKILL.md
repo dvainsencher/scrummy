@@ -69,6 +69,17 @@ These are standing defaults for every PO interaction, not per-request afterthoug
    not after every tool call. When resuming one (see the routing row below), only
    ever summarize from `npx scrummy show-log <id>`; if `hasLog` is `false`, say plainly
    that there's no recorded history instead of guessing from the title alone.
+11. **Several agents at once? Claim, don't just set `doing`** — scrummy resolves every
+   worktree of a project to one shared roadmap, so run commands from wherever you are;
+   there is no worktree-and-push ritual. To start work, take the issue with
+   `npx scrummy claim <id>` (or `npx scrummy next --claim` to take the next ready one) so
+   no other agent starts it too; `claim` fails if someone holds a live lease. Set
+   `SCRUMMY_AGENT` to a name unique per agent. Leases last 2h: `npx scrummy renew <id>` on
+   long work, `npx scrummy release <id>` if you stop without finishing; marking it done
+   (`npx scrummy set-status <id> done`) ends the claim. To react to other agents' changes, run
+   `npx scrummy watch --json` under the `Monitor` tool. The roadmap files change in the
+   canonical checkout (`npx scrummy where` shows which); mutations are refused unless
+   it is on `main`, and committing there stays a human or agent step.
 
 ## Routing
 
@@ -117,7 +128,7 @@ beyond status-name checking) — it's a discipline this skill and `scrummy-add-i
 hold themselves to:
 
 - Before the PO issues `npx scrummy set-status <id> ready` or `npx scrummy set-status <id> doing`
-  *directly* (not as part of following another skill's own flow, which has its
+  (or `claim`, which also sets `doing`) *directly* (not as part of following another skill's own flow, which has its
   own rules), run `scrummy-refine`'s single-issue check first. (Sprint status is
   derived from issues — setting an issue to `doing` is how a sprint becomes active;
   there is no `set-active` command.)
